@@ -1,0 +1,946 @@
+/**
+ * Common functions for v3.0
+ */
+
+/**
+ * Namespace for common functions
+ *
+ * @type
+ * @exp;NetexLMS
+ */
+var NetexLMS = NetexLMS || {};
+
+NetexLMS.constants = {
+    REDIRECT_HEADER: "lms-redirect",
+    FORM_ENCTYPE: "enctype",
+    MULTIPART_ENCTYPE: "multipart/form-data",
+    POST_METHOD: 'POST',
+    HTTP_STATUS: {
+        OK: 200,
+        NO_CONTENT: 204
+    },
+    BROWSER: {
+        IE8: "MSIE 8.0"
+    },
+    NOTIFICATION_MESSAGE_PARAM: "errorMessage"
+};
+
+NetexLMS.functions = {
+    /**
+     *
+     * @param {string}
+     *            uri
+     * @param {object}
+     *            component
+     * @returns {void}
+     */
+    changeDisplayedItems: function (uri, paramName, paramValue) {
+        NetexLMS.functions.updateWindowLocation(NetexLMS.functions.addOrUpdateQueryStringParam(uri, paramName,
+            paramValue));
+    },
+    /**
+     *
+     * @param {type}
+     *            uri
+     * @returns {undefined}
+     */
+    updateWindowLocation: function (uri) {
+        window.location = uri;
+    },
+    /**
+     *
+     * @param {type}
+     *            uri
+     * @param {type}
+     *            key
+     * @param {type}
+     *            value
+     * @returns {String}
+     */
+    addOrUpdateQueryStringParam: function (uri, key, value) {
+        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+        if (uri.match(re)) {
+            return uri.replace(re, '$1' + key + "=" + value + '$2');
+        } else {
+            return uri + separator + key + "=" + value;
+        }
+    },
+    /**
+     * NetexLMS.functions.addParamsToUri("theurlvalue",{ multivalued: [ 2, 3, 4 ] , singleValue: 'otherValue'})
+     * => theurlvalue?multivalued=2&multivalued=3&multivalued=4&singleValue=otherValue
+     *
+     * @param {type} uri
+     * @param {type} params
+     * @returns {@var;uri|@var;separator|String}
+     */
+    addParamsToUri: function (uri, params) {
+        if (params) {
+            var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+            uri = uri + separator + $.param(params, true);
+        }
+        return uri;
+    },
+    getQueryParameter(uri, key) {
+        key = key.replace(/[\[\]]/g, '\\$&');
+        var regex = new RegExp('[?&]' + key + '(=([^&#]*)|&|#|$)'),
+            results = regex.exec(uri);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, ' '));
+    },
+    /**
+     * loads modal from url to a container
+     *
+     * @param {String}
+     *            url
+     * @param {String}
+     *            modalContainerId
+     * @returns {undefined}
+     */
+    loadAjaxModal: function (url, modalContainerId, onComplete) {
+        $.get(url, function (data) {
+            $('#' + modalContainerId).html(data);
+            if (onComplete && typeof (onComplete) === "function") {
+                onComplete();
+            }
+
+        });
+    },
+    /**
+     * Post from data via ajax
+     *
+     * @param {String}
+     *            url url for post form data via ajax
+     * @param {String}
+     *            formId html form id
+     * @param {String}
+     *            modalId html for the modal
+     * @param {String}
+     *            modalContainerId html id for the modal's container
+     * @returns reload page or update form
+     */
+    postModalFormAndReload: function (url, form, modal, modalContainer, createNew, asyncProcess) {
+        if (form.attr(NetexLMS.constants.FORM_ENCTYPE) === NetexLMS.constants.MULTIPART_ENCTYPE) {
+            NetexLMS.functions.postModalMultipartForm(url, form, modal, modalContainer, createNew);
+        } else {
+        	if(asyncProcess){
+        		NetexLMS.functions.postModalForm(url, form, modal, modalContainer, createNew, NetexLMS.i18n['asyn.process.info']);
+        	}else{
+        		NetexLMS.functions.postModalForm(url, form, modal, modalContainer, createNew);
+        	}
+
+        }
+        return false;
+    },
+    postModalForm: function (url, form, modal, modalContainer, createNew, asyncMessage) {
+        if (NetexLMS.util.validation.validate(form)) {
+            $.post(url, form.serialize(), function (data, status, jqXHR) {
+                NetexLMS.functions.processModalResponse(modal, modalContainer, data, status, jqXHR, createNew, asyncMessage);
+            });
+        }
+    },
+    postModalMultipartForm: function (url, form, modal, modalContainer, createNew) {
+        if (NetexLMS.util.validation.validate(form)) {
+            var formData = new FormData(form[0]);
+            $.ajax({
+                url: url,
+                type: NetexLMS.constants.POST_METHOD,
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data, status, jqXHR) {
+                    NetexLMS.functions.processModalResponse(modal, modalContainer, data, status, jqXHR, createNew);
+                }
+            });
+        }
+    },
+    processModalResponse: function (modal, modalContainer, data, status, jqXHR, createNew, asyncMessage) {
+        if (jqXHR.status === NetexLMS.constants.HTTP_STATUS.OK) {
+            if (jqXHR.getResponseHeader('Content-Type').indexOf('text/html') > -1) {
+                modal.modal('hide');
+                modal.remove();
+                $('.modal-backdrop').remove();
+                $('body').removeClass("modal-open");
+                $('body').css("padding-right", "");
+                modalContainer.html(data);
+            }
+            modalContainer.trigger("submit:success", jqXHR);
+        } else if (jqXHR.status === NetexLMS.constants.HTTP_STATUS.NO_CONTENT) {
+            modal.modal('hide');
+            var uri = jqXHR.getResponseHeader(NetexLMS.constants.REDIRECT_HEADER);
+            var notificationMessage = jqXHR.getResponseHeader(NetexLMS.constants.NOTIFICATION_MESSAGE_PARAM);
+            if(asyncMessage){
+            	 NetexLMS.functions.showNotyMessage("success", asyncMessage);
+            }
+
+            if (null !== uri && uri !== '') {
+                if (createNew) {
+                    uri = NetexLMS.functions.addOrUpdateQueryStringParam(uri, 'createNew', true);
+                }
+                if(notificationMessage){
+                	  uri = NetexLMS.functions.addOrUpdateQueryStringParam(uri, NetexLMS.constants.NOTIFICATION_MESSAGE_PARAM, notificationMessage);
+                }
+                window.location = uri;
+            } else {
+
+                if(notificationMessage){
+                  window.history.replaceState( {} , "nedsNotificationMessage", NetexLMS.functions.addOrUpdateQueryStringParam(location.href, NetexLMS.constants.NOTIFICATION_MESSAGE_PARAM, notificationMessage));
+                }
+                location.reload(true);
+            }
+        }
+    },
+    /**
+     *
+     * @param {type}
+     *            modalId
+     * @param {type}
+     *            message
+     * @returns {undefined}
+     */
+    showSimpleInformationModal: function (modalId, message) {
+        var modalHtml = "<div class='modal fade bs-example-modal-sm' id='" + modalId
+            + "' tabindex='-1' role='dialog' aria-labelledby='myModalLabel'> ";
+        modalHtml += "    <div class='modal-dialog modal-sm' role='document'>";
+        modalHtml += "        <div class='modal-content modal-round'>";
+        modalHtml += "            <div class='modal-header modal-round'>";
+        modalHtml += "                <button class='close btn btn-link btn-white' type='button' data-dismiss='modal' aria-label='Close'>";
+        modalHtml += NetexLMS.i18n['button.label.close'];
+        modalHtml += "                    <span class='icon-uno cross icon-small' aria-hidden='true'>";
+        modalHtml += "                    <span>";
+        modalHtml += "                </button>";
+        modalHtml += "            </div>";
+        modalHtml += "            <div class='modal-body'>";
+        modalHtml += "                <div class='row'>";
+        modalHtml += "                    <div class='col-md-12 margincero'>";
+        modalHtml += "                        <span class='icon-uno info-line icon-xxl'></span>";
+        modalHtml += "                        <p>" + message + "</p>";
+        modalHtml += "                    </div>";
+        modalHtml += "                </div>";
+        modalHtml += "            </div>";
+        modalHtml += "        </div>";
+        modalHtml += "    </div>";
+        modalHtml += "</div>";
+        $('body').append(modalHtml);
+
+        $('#' + modalId).on('hidden.bs.modal', function () {
+            $('#' + modalId).remove();
+        });
+
+        $("#" + modalId).modal({backdrop: "static"});
+    },
+    /**
+     *
+     * @param {String}
+     *            type alert | success | error | warning | information
+     * @param {String}
+     *            message
+     * @returns {void}
+     */
+    showNotyMessage: function (type, message) {
+        noty({
+            layout: 'topRight',
+            theme: 'relax',
+            type: type,
+            text: message,
+            dismissQueue: true,
+            animation: {
+                open: 'animated fadeIn',
+                close: 'animated fadeOut',
+                easing: 'swing',
+                speed: 500
+            },
+            timeout: 8000,
+            force: false,
+            modal: false,
+            maxVisible: 5,
+            killer: false,
+            closeWith: ['click']
+        });
+        // let url = new URL(location.href);
+        // let params = new URLSearchParams(url.search);
+        // params.delete(NetexLMS.constants.NOTIFICATION_MESSAGE_PARAM);
+        // window.history.replaceState( {} , " ", url.toString().replace(/(\?|\&).*/,'?'+params.toString()));
+    },
+    /**
+     *
+     * @param {type}
+     *            modalId
+     * @param {type}
+     *            closeButtonLabel
+     * @param {type}
+     *            confirmButtonLabel
+     * @param {type}
+     *            message
+     * @param {type}
+     *            callbackOnClose
+     * @param {type}
+     *            action
+     * @returns {undefined}
+     */
+    showConfirmModalForm: function (modalId, closeButtonLabel, confirmButtonLabel, message, callbackOnClose, action) {
+        const token = $("meta[name='_csrf']").attr("content");
+
+        var modalHtml = "<div class='modal fade bs-example-modal-sm' id='" + modalId
+            + "' tabindex='-1' role='dialog' aria-labelledby='myModalLabel'> ";
+        modalHtml += "    <div class='modal-dialog modal-sm' role='document'>";
+        modalHtml += "        <div class='modal-content modal-round'>";
+        modalHtml += "            <div class='modal-body'>";
+        modalHtml += "                <div class='row'>";
+        modalHtml += "                    <div class='col-md-12'>";
+        modalHtml += "                        <span class='icon-uno question-circle icon-xxl'></span>";
+        modalHtml += "                        <p>" + message + "</p>";
+        modalHtml += "                    </div>";
+        modalHtml += "                </div>";
+        modalHtml += "            </div>";
+        modalHtml += "            <form action='" + action + "' method='post' data-not-clear>";
+        modalHtml += "                <div class='modal-footer modal-round'>";
+        modalHtml += "                    <button id='closeButton' type='button' class='btn btn-link btn-white' data-dismiss='modal'>"
+            + closeButtonLabel + "</button>";
+        modalHtml += "                    <button id='confirmButton' type='submit' class='btn btn-blue'>"
+            + confirmButtonLabel + "</button>";
+        modalHtml += "                </div>";
+        if (token) {
+            modalHtml += "          <input type='hidden' name='_csrf' value='"+token+"'/>";
+        }
+
+        modalHtml += "            </form>";
+        modalHtml += "        </div>";
+        modalHtml += "    </div>";
+        modalHtml += "</div>";
+        $('body').append(modalHtml);
+        var $modal = $('#' + modalId);
+        $modal.submit(function () {
+            $modal.modal('hide');
+        });
+        $modal.on('hidden.bs.modal', function () {
+            $modal.remove();
+            if (callbackOnClose && typeof (callbackOnClose) === "function") {
+                callbackOnClose();
+            }
+        });
+
+        $("#" + modalId).modal({backdrop: "static"});
+    },
+    /**
+     *
+     * @param {type}
+     *            modalId
+     * @param {type}
+     *            closeMessage
+     * @param {type}
+     *            confirmMessage
+     * @param {type}
+     *            message
+     * @param {type}
+     *            callbackOnClose
+     * @param {type}
+     *            callbackOnConfirm
+     * @returns {undefined}
+     */
+    showConfirmModal: function (modalId, closeMessage, confirmMessage, message, callbackOnClose, callbackOnConfirm) {
+        var modalHtml = "<div class='modal fade bs-example-modal-sm' id='" + modalId
+            + "' tabindex='-1' role='dialog' aria-labelledby='myModalLabel'> ";
+        modalHtml += "    <div class='modal-dialog modal-sm' role='document'>";
+        modalHtml += "        <div class='modal-content modal-round'>";
+        modalHtml += "            <div class='modal-body'>";
+        modalHtml += "                <div class='row'>";
+        modalHtml += "                    <div class='col-md-12'>";
+        modalHtml += "                        <span class='icon-uno question-circle icon-xxl'></span>";
+        modalHtml += "                        <p>" + message + "</p>";
+        modalHtml += "                    </div>";
+        modalHtml += "                </div>";
+        modalHtml += "            </div>";
+        modalHtml += "            <div class='modal-footer modal-round'>";
+        modalHtml += "                <button id='closeButton' type='button' class='btn btn-link btn-white' data-dismiss='modal'>"
+            + closeMessage + "</button>";
+        modalHtml += "                <button id='confirmButton' type='button' class='btn btn-blue'>" + confirmMessage
+            + "</button>";
+        modalHtml += "            </div>";
+        modalHtml += "        </div>";
+        modalHtml += "    </div>";
+        modalHtml += "</div>";
+        $('body').append(modalHtml);
+
+        if (callbackOnConfirm && typeof (callbackOnConfirm) === "function") {
+            $('#confirmButton').click(function () {
+                // destroy modal
+                $('#' + modalId).remove();
+                $('.modal-backdrop').remove();
+                $('body').removeClass("modal-open");
+                $('body').css("padding-right", "");
+                callbackOnConfirm();
+            });
+        }
+        $('#' + modalId).on('hidden.bs.modal', function () {
+            $('#' + modalId).remove();
+            if (callbackOnClose && typeof (callbackOnClose) === "function") {
+                callbackOnClose();
+            }
+        });
+
+        $("#" + modalId).modal({backdrop: "static"});
+    },
+    showConfirmModalFormKids: function (modalId, closeMessage, confirmMessage, message, title, action) {
+        const token = $("meta[name='_csrf']").attr("content");
+        var modalHtml = "    <div class='modal fade modal-kids' id='modal-delete' tabindex='-1' role='dialog' aria-labelledby='delete-modal'>";
+        modalHtml += "<div class='modal-dialog' role='document'>";
+        modalHtml += "        <div class='modal-content'>";
+        modalHtml += "<div class='modal-header'>";
+        modalHtml += "  <h4 class='modal-title'>"+title+"</h4>";
+        modalHtml += "</div>";
+        modalHtml += "<div class='modal-body'>";
+        modalHtml += "<p class='modal-body-text'>"+message+"</p>";
+        modalHtml += "</div>";
+        modalHtml += "            <form action='" + action + "' method='post' data-not-clear>";
+        modalHtml += "<div class='modal-footer'>";
+        modalHtml += "<button id='' type='button' class='btn btn-secondary-kids' data-dismiss='modal'>"+ closeMessage +"</button>";
+        modalHtml += "<button id='' type='submit' class='btn btn-blue-kids'>"+ confirmMessage +"</button>";
+        modalHtml += "</div>";
+        modalHtml += "</div>";
+        if (token) {
+            modalHtml += "          <input type='hidden' name='_csrf' value='"+token+"'/>";
+        }
+        modalHtml += "</form>";
+        modalHtml += "</div>";
+        modalHtml += "</div>";
+        $('body').append(modalHtml);
+        var $modal = $('#' + modalId);
+        $modal.submit(function () {
+            $modal.modal('hide');
+        });
+        $modal.on('hidden.bs.modal', function () {
+            $modal.remove();
+        });
+
+        $("#" + modalId).modal({backdrop: "static"});
+    },
+    showConfirmModalKids: function (modalId, closeMessage, confirmMessage, message, title, callbackOnClose, callbackOnConfirm) {
+        var modalHtml = "    <div class='modal fade modal-kids' id='" + modalId
+            + "' tabindex='-1' role='dialog' aria-labelledby='delete-message-modal'>";
+        modalHtml += "<div class='modal-dialog' role='document'>";
+        modalHtml += "        <div class='modal-content'>";
+        modalHtml += "<div class='modal-header'>";
+        modalHtml += "  <h4 class='modal-title'>"+title+"</h4>";
+        modalHtml += "</div>";
+        modalHtml += "<div class='modal-body'>";
+        modalHtml += "<p class='modal-body-text'>"+message+"</p>";
+        modalHtml += "</div>";
+        modalHtml += "<div class='modal-footer'>";
+        modalHtml += "<button id='closeButton' type='button' class='btn btn-secondary-kids' data-dismiss='modal'>"+ closeMessage +"</button>";
+        modalHtml += "<button id='confirmButton' type='submit' class='btn btn-blue-kids'>"+ confirmMessage +"</button>";
+        modalHtml += "</div>";
+        modalHtml += "</div>";
+        modalHtml += "</div>";
+        modalHtml += "</div>";
+        $('body').append(modalHtml);
+
+        if (callbackOnConfirm && typeof (callbackOnConfirm) === "function") {
+            $('#confirmButton').click(function () {
+                // destroy modal
+                $('#' + modalId).remove();
+                $('.modal-backdrop').remove();
+                $('body').removeClass("modal-open");
+                $('body').css("padding-right", "");
+                callbackOnConfirm();
+            });
+        }
+        $('#' + modalId).on('hidden.bs.modal', function () {
+            $('#' + modalId).remove();
+            if (callbackOnClose && typeof (callbackOnClose) === "function") {
+                callbackOnClose();
+            }
+        });
+
+        $("#" + modalId).modal({backdrop: "static"});
+    },
+    globalCheckboxComponent: function (globalCheckboxCss, childCheckboxesCss) {
+        $(globalCheckboxCss).off("change");
+        $(globalCheckboxCss).change(function () {
+            if ($(globalCheckboxCss + ":checked").length > 0) {
+                $.each($(childCheckboxesCss), function () {
+                    if ($(this).attr("disabled") !== 'disabled') {
+                        $(this).prop('checked', true);
+                    }
+                });
+            } else {
+                $.each($(childCheckboxesCss), function () {
+                    if ($(this).attr("disabled") !== 'disabled') {
+                        $(this).prop('checked', false);
+                    }
+                });
+            }
+        });
+
+        $(childCheckboxesCss)
+            .change(
+                function () {
+                    if (($(childCheckboxesCss + ":checked").length + $(globalCheckboxCss + ":checked").length) === (($(childCheckboxesCss).length))) {
+                        if ($(globalCheckboxCss + ":checked").length === 0) {
+                            $(globalCheckboxCss).prop('checked', true);
+                        } else {
+                            $(globalCheckboxCss).prop('checked', false);
+                        }
+                    }
+                });
+    },
+    printPage: function () {
+        window.print();
+    },
+    getSelectedCheckBoxesValues: function (name) {
+        var checkboxValues = [];
+        $('input[name="' + name + '"]:checked').each(function () {
+            checkboxValues.push($(this).val());
+        });
+        return checkboxValues;
+    },
+    shadeColor: function (color, percent) {
+        var f = parseInt(color.slice(1), 16), t = percent < 0 ? 0 : 255, p = percent < 0 ? percent * -1 : percent, R = f >> 16, G = f >> 8 & 0x00FF, B = f & 0x0000FF;
+        return "#" + (0x1000000 + (Math.round((t - R) * p) + R) * 0x10000 + (Math.round((t - G) * p) + G) * 0x100 + (Math.round((t - B) * p) + B)).toString(16).slice(1);
+    },
+    reloadSelector: function (data, url, selectTargetContainerId) {
+        $("#" + selectTargetContainerId).empty();
+        $.ajax({
+            dataType: "json",
+            type: "GET",
+            url: url,
+            data: data,
+            success: function (data) {
+                $(data).each(function (index, element) {
+                    var optionHTML = "<option value='" + element.key + "'";
+
+                    if(element.extraProperties){
+                        for (var key in element.extraProperties) {
+                            optionHTML += " " + key + "='" + element.extraProperties[key] + "'";
+                        }
+                    }
+
+                    optionHTML += ">" + element.value + "</option>";
+                    $("#" + selectTargetContainerId).append(optionHTML);
+                });
+            },
+            complete: function () {
+                $("#" + selectTargetContainerId).selectpicker('refresh');
+            }
+        });
+    },
+
+
+    multiClickTable: function () {
+        //Código para que las tablas sean clicables en toda la fila
+        $("table.table-striped tbody tr td:not('.column-icon, .input-column, .column-checkbox')").click(function () {
+            var href = $(this).closest('tr').find("a.row-link").attr("href");
+            //Comprobamos si hay un link para que nos redirija al clicar cualquier td
+            if ($(this).closest('tr').find("a.row-link").length) {
+                window.location = href;
+                $("table.table-striped tbody tr td").css('cursor', 'pointer');
+            }
+        });
+        //Al hacer hover le ponemos cursor pointer si hay link
+        $("table.table-striped tbody tr td:not('.column-icon, .input-column, .column-checkbox')").hover(function () {
+            var href = $(this).closest('tr').find("a.row-link").attr("href");
+            //Comprobamos si hay un link
+            if ($(this).closest('tr').find("a.row-link").length) {
+                $(this).css('cursor', 'pointer');
+            }
+        });
+    },
+    //spiner
+    scrollTable: function(){
+    	$(window).scroll(function() {
+    	   var isSeeMore = $('#seeMore').data('is-see-more');
+    	   var disable = $('#seeMore').attr('disabled');
+    	   var windowScroll = $(window).scrollTop();
+    	   if(isSeeMore){
+    		   if(Math.ceil(windowScroll + $(window).height()) == $(document).height() && disable == undefined) {
+
+        	       //mostrar spiner si hay que mostrar mas actividades
+        		   $('.spinner-box').removeClass('hidden');
+        	       // llamada a Ajax aquí
+        	    	var nextPage = $('#seeMore').data('next-page');
+        	    	var endpoint = $('#seeMore').data('see-more-endpoint');
+        	    	endpoint = NetexLMS.functions.addOrUpdateQueryStringParam(endpoint, "page", nextPage);
+        	    	$('#seeMore').attr('disabled', true);
+        	        $.ajax({
+        	            type: "GET",
+        	            url: endpoint,
+        	            success: function (data) {
+        	     		    $('.spinner-box').addClass('hidden');
+    	     		    	if ($('#parentCheckbox').is(':checked')) {
+    	     		    		$('#parentCheckbox').attr('checked', false);
+	     		    		}
+							$('#isSeeMore').remove();
+							$('.activities-cards-container').append(data);
+							//Se fija la posición de scroll
+                            $(window).scrollTop(windowScroll);
+
+                            if ($('#isSeeMore').data('is-see-more')) {
+                                $('#seeMore').data('next-page', nextPage+1);
+                                $('#seeMore').attr('disabled', false);
+                            } else {
+                                $('#seeMore').remove();
+                            }
+                        }
+                    });
+                }
+            }
+
+        });
+
+    },
+    getCookie: function(name) {
+	    var match = document.cookie.match(RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+	    return match ? match[1] : null;
+	},
+    setCookie: function(cName, cValue, expSeconds) {
+	    let date = new Date();
+	    date.setTime(date.getTime() + (expSeconds * 1000));
+	    const expires = "expires=" + date.toUTCString();
+	    document.cookie = cName + "=" + cValue + "; " + expires + "; path=/";
+	},
+    handleFetchApiRequestErrors: async function (response) {
+	    if (!response.ok) {
+	    	const error = await response.text();
+	        throw Error(response.status + " : " + error);
+	    }
+	    return response;
+	},
+	arraysEqual: function(a, b) {
+	    if (a === b) return true;
+	    if (a == null || b == null) return false;
+	    if (a.length !== b.length) return false;
+
+	    var sortedA = [...a].sort();
+	    var sortedB = [...b].sort();
+
+	    for (var i = 0; i < sortedA.length; ++i) {
+	      if (sortedA[i] !== sortedB[i]) return false;
+	    }
+	    return true;
+	}
+};
+
+
+NetexLMS.util = {
+    ajaxModalFormComponent: {
+        /**
+         * Initialize js for /tags/customtags/html/ajaxModalFormComponent.tag
+         *
+         * @param {String}
+         *            url
+         * @param {String}
+         *            formId
+         * @param {String}
+         *            modalId
+         * @param {String}
+         *            modalContainerId
+         * @returns {void}
+         */
+        initModal: function (url, formId, modalContainerId, asyncProcess) {
+
+            var container = $("#" + modalContainerId);
+            var form = $("#" + formId);
+            var modal = container.find('.modal').modal({backdrop: "static"});
+            var createAndNew;
+
+            form.submit(function() {
+            	if(asyncProcess){
+            		NetexLMS.functions.postModalFormAndReload(url, form, modal, container, createAndNew == "createAndNew", asyncProcess);
+            	}else{
+            		NetexLMS.functions.postModalFormAndReload(url, form, modal, container, createAndNew == "createAndNew");
+            	}
+
+                return false;
+            });
+
+            $("button[form='" + formId + "']").click(function onModalFormSubmit() {
+                createAndNew = $(this).val();
+                form.submit();
+            });
+
+        }
+    },
+    validation: {
+        getFormField: function (fieldName, form) {
+            return $("[name='" + fieldName.replace(/(:|\.|\[|\]|,)/g, "\\$1") + "']", form);
+        },
+        clearError: function (fieldName, form) {
+            if (fieldName) {
+                var field = NetexLMS.util.validation.getFormField(fieldName, form);
+                field.closest('div').removeClass("has-error").removeClass("has-feedback");
+                field.siblings('[data-error-icon]').addClass("hidden");
+                field.siblings('[data-error-message]').addClass("hidden").text('');
+                $('#' + fieldName.replace(/(:|\.|\[|\]|,)/g, "\\$1") + 'Error').addClass("hidden");
+            }
+        },
+        clearFormErrors: function (form) {
+            var formInputs = $("input,textarea,select", form);
+            formInputs.each(function (index, input) {
+                var fieldName = $(input).attr('name');
+                if (fieldName) {
+                    NetexLMS.util.validation.clearError(fieldName, form);
+                }
+            });
+            NetexLMS.util.validation.clearError(form.attr('id'), form);
+        },
+        setError: function (fieldName, form, errorMessage) {
+            var field = NetexLMS.util.validation.getFormField(fieldName, form);
+            field.closest('div').addClass("has-error").addClass("has-feedback");
+            field.siblings('[data-error-icon]').removeClass("hidden");
+            field.siblings('[data-error-message]').removeClass("hidden").text(errorMessage);
+            $('#' + fieldName.replace(/(:|\.|\[|\]|,)/g, "\\$1") + 'Error').removeClass("hidden").text(errorMessage);
+        },
+        setErrors: function (errorObject, form) {
+            for (var key in errorObject) {
+                NetexLMS.util.validation.setError(key, form, errorObject[key]);
+            }
+        },
+        validate: function (form) {
+            var form = form;
+            /*var formSerialize = form.serialize();
+            if(!formSerialize.includes('_csrf')){
+                var token = $("meta[name='_csrf']").attr("content");
+                if (token)  formSerialize+='&_csrf=' + token;
+            }*/
+            form.trigger("validation:before");
+            var validationUrl = form.data("validationUrl");
+            if (validationUrl) {
+                var doSubmit = form.data("submitOnSuccess") !== false;
+                var isValid = false;
+                NetexLMS.util.validation.clearFormErrors(form);
+                $.ajax({
+                    url: validationUrl,
+                    method: "POST",
+                    data: form.serialize(),
+                    dataType: "json",
+                    async: false,
+                    error: function (jqXHR, status, error) {
+                        console.warn("xhr: ", jqXHR);
+                        console.warn("status: ", status);
+                        console.warn("error: ", error);
+                    },
+                    success: function (data) {
+                        if ($.isEmptyObject(data.messages)) {
+                            isValid = true;
+                            form.trigger("validation:success");
+                        } else {
+                            isValid = false;
+                            $.each(data.messages, function (fieldName, errorMessage) {
+                                NetexLMS.util.validation.setError(fieldName, form, errorMessage);
+                            });
+                            form.find("[type=submit]").each(function () {
+                                $(this).prop("disabled", false);
+                            });
+                            form.trigger("validation:fail");
+                        }
+                    }
+                });
+                return doSubmit && isValid;
+            }
+            return true;
+        }
+    },
+    form: {
+        clearForm: function (element) {
+            element.find('form:not([data-not-clear])').each(function () {
+                this.reset();
+                NetexLMS.util.validation.clearFormErrors($(this));
+                $(this).find('select option:first-child').attr("selected", "selected").parent().selectpicker('refresh');
+            });
+        }
+    },
+        
+	isBlank: function (str) {
+        return (!str || /^\s*$/.test(str));
+    }
+    
+};
+
+NetexLMS.browser = {
+    getBrowserVersion: function () {
+        var ua = navigator.userAgent,
+            N = navigator.appName, tem,
+            M = ua.match(/(opera|chrome|safari|firefox|msie|trident)\/?\s*([\d\.]+)/i) || [];
+        M = M[2] ? [M[1], M[2]] : [N, navigator.appVersion, '-?'];
+        if (M && (tem = ua.match(/version\/([\.\d]+)/i)) !== null) {
+            M[2] = tem[1];
+        }
+        return M.join(' ');
+    },
+    isIE8: function () {
+        return NetexLMS.browser.getBrowserVersion() === NetexLMS.constants.BROWSER.IE8;
+    },
+    // Checking if touch screen
+    isTouchDevice: function () {
+        return ("ontouchstart" in window || window.DocumentTouch && document instanceof DocumentTouch);
+    },
+    // Checking if iOS
+    isIOS: function () {
+        var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        return (userAgent.match(/iPad/i) || userAgent.match(/iPhone/i) || userAgent.match(/iPod/i));
+    }
+};
+
+
+(function (ns, $) {
+    ns.getMessage = function (code, args) {
+        var message = NetexLMS.i18n[code];
+        if (message) {
+            if (!(args instanceof Array)) {
+                args = [args];
+            }
+            $.each(args, function (index, value) {
+                message = message.split("{" + index + "}").join(value);
+            });
+        }
+        return message;
+    }
+
+
+})(NetexLMS.i18n = NetexLMS.i18n || {}, jQuery);
+
+(function (ns, $) {
+    ns.getDateTimePickerConf = function (extraOptions) {
+        var conf = {
+            locale: NetexLMS.configuration.locale,
+            format: NetexLMS.configuration.dateFormat,
+            ignoreReadonly: true
+        };
+        if (NetexLMS.browser.isIE8()) {
+            var ie8Conf = {
+                showClose: true,
+                toolbarPlacement: 'bottom',
+                debug: true
+            };
+            conf = $.extend(conf, ie8Conf);
+        }
+
+        if (null != extraOptions && undefined !== extraOptions) {
+            $.extend(conf, extraOptions);
+        }
+        return conf;
+    };
+})(NetexLMS.configuration = NetexLMS.configuration || {}, jQuery);
+
+$(function () {
+    $.ajaxPrefilter( "script", function( options, originalOptions, jqXHR ) {
+        // Modify options, control originalOptions, store jqXHR, etc
+        options.cache=true
+    });
+
+    /**
+     * Handle ajax errors
+     */
+    $(document).ajaxError(function (event, jqxhr, settings, thrownError) {
+
+        console.log("Error in url: " + settings.url + " with jqxhr.status = " + jqxhr.status + ", jqxhr.readyState =  " + jqxhr.readyState);
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Response_codes
+        if (jqxhr.status === 0) {
+            console.log('Not connect. Verify Network.');
+        } else if (jqxhr.status == 404) {
+            console.log('Requested page not found. [404]');
+        } else if (jqxhr.status == 500) {
+            console.log('Internal Server Error [500].');
+        } else if (jqxhr.status == 401) {
+            console.log('401');
+            window.location.href = NetexLMS.configuration.loginUrl;
+        } else if (jqxhr.status == 409){
+            console.log('Conflict [409].');
+        }else if (thrownError === 'parsererror') {
+            console.log('Requested JSON parse failed.');
+        } else if (thrownError === 'timeout') {
+            console.log('Time out error.');
+        } else if (thrownError === 'abort') {
+            console.log('Ajax request aborted.');
+        } else {
+            console.log('Uncaught Error.' + jqxhr.responseText);
+        }
+        // http://api.jquery.com/jQuery.ajax/#jqXHR
+        // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
+        // jqxhr.readyState
+        // 0	UNSENT	Client has been created. open() not called yet.
+        // 1	OPENED	open() has been called.
+        // 2	HEADERS_RECEIVED	send() has been called, and headers and status are available.
+        // 3	LOADING	Downloading; responseText holds partial data.
+        // 4	DONE	The operation is complete.
+        if (jqxhr.status !== 200 && jqxhr.readyState !== 0
+        		&& !(settings.handleErrors && settings.handleErrors.indexOf(jqxhr.status) !== -1)) {
+            if(jqxhr.responseJSON && jqxhr.responseJSON.errorMessage){
+                NetexLMS.functions.showNotyMessage("warning", jqxhr.responseJSON.errorMessage);
+            }else{
+                NetexLMS.functions.showNotyMessage("warning", jqxhr.statusText);
+            }
+
+        }
+    });
+    /**
+     * handle start ajax request
+     */
+    $.ajaxSetup({
+        beforeSend: function (xhr) {
+            // Added csrf headers for manual ajax requests
+            // https://stackoverflow.com/questions/25159772/jquery-post-giving-403-forbidden-error-in-spring-mvc
+            const token = $("meta[name='_csrf']").attr("content");
+            const header = $("meta[name='_csrf_header']").attr("content");
+            if (token && header)    xhr.setRequestHeader(header, token);
+
+            $(".modal-backdrop").css("z-index", "99999");
+        }
+    });
+
+    /**
+     * handle end ajax request
+     */
+    $(document).ajaxStop(function () {
+        $(".modal-backdrop").css("z-index", "");
+    });
+
+    $("input.simple-date-picker").datetimepicker(NetexLMS.configuration.getDateTimePickerConf());
+    $("input.double-date-picker").datetimepicker({
+        inline: false,
+        sideBySide: true,
+        locale:'es',
+        format: 'DD/MM/YY hh:mm'
+    });
+
+    $(document).delegate('#printPage', 'click', function () {
+        NetexLMS.functions.printPage();
+    });
+
+    moment.locale(NetexLMS.configuration.locale);
+
+    /*
+     * Bind validation
+     */
+    $(document).delegate("form[data-validation-url]", 'submit', function () {
+        return NetexLMS.util.validation.validate($(this));
+    });
+
+
+    /**
+     * anade el contexto a los formularios enviados por GET
+     * anade csrf token en los formularios enviados por POST
+     */
+    $(document).delegate("form", 'submit', function () {
+        var $form = $(this);
+        if ('GET' === $form.attr('method').toUpperCase()) {
+            $.each(NetexLMS.context, function (key, value) {
+                $('<input />').attr('type', 'hidden')
+                    .attr('name', key)
+                    .attr('value', value)
+                    .appendTo($form);
+            });
+        } else if ('POST' === $form.attr('method').toUpperCase()) {
+            const token = $("meta[name='_csrf']").attr("content");
+            if (token) {
+                $('<input />').attr('type', 'hidden')
+                    .attr('name', "_csrf")
+                    .attr('value', token)
+                    .appendTo($form);
+            }
+
+        }
+    });
+});

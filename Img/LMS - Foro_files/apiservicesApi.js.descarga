@@ -1,0 +1,193 @@
+var apiServicesApi = function(){
+	const AVAILABLE_TENANTS_URL = '/apiservice/users/me/availabletenants';
+	const TARGET_GROUPS_URL = '/apiservice/users/me/targetgroups/grouptree?';
+	const REDEEM_TARGET_GROUPS_URL = '/apiservice/users/me/targetgroups/redeem?';
+	const SHORT_REF_ID_PATTERN = "00000000-0000-1000-0000-";
+
+	const getNedsTenantContext = async() => {
+
+		return new Promise(async function( resolve, reject ){
+			var nedsTenantContextCookie = NetexLMS.functions.getCookie('nedsTenantContext');
+			if(nedsTenantContextCookie == null){
+
+				var authorizationCode;
+				try {
+					authorizationCode = await connectAuthentication.getAuthorizationCode();
+				} catch(error){
+					return reject(new Error("ApiServices Api: error intentando recuperar access code del usuario " + error))
+				};
+
+				//TODO: cambiar esta llamada por una nueva solicitada al equipo de api services
+				//para que te devuelva el login context directamente
+				fetch(NetexLMS.configuration['neds.apiservices.api.url'] + AVAILABLE_TENANTS_URL, {
+					method: 'GET',
+					headers:{
+						'Authorization': 'Bearer '+ authorizationCode
+					}
+				})
+				.then(NetexLMS.functions.handleFetchApiRequestErrors)
+				.then(async function(availableTenantsResponse) {
+					const availableTenantsJsonResponse = await availableTenantsResponse.json();
+
+					//El servicio me devuelve la lista de tenants del usuario en connect, selecciono el que se
+					//corresponde con el usuario actual en el lms
+					nedsTenantContextCookie = getNedsTenantFromAvailableTenants(availableTenantsJsonResponse);
+
+					if(nedsTenantContextCookie == null){
+						return reject(new Error("ApiServices Api: No se ha encontrado ningún tenant disponible para el usuario en connect"));
+					} else {
+						NetexLMS.functions.setCookie('nedsTenantContext', nedsTenantContextCookie, '86400');
+					}
+
+					return resolve(JSON.parse(nedsTenantContextCookie));
+
+				}).catch(function(error) {
+					return reject(new Error("ApiServices Api: error en la llamada al servicio de obtención de tenants disponibles " + error));
+				});
+			} else {
+				return resolve(JSON.parse(nedsTenantContextCookie));
+			}
+		});
+	};
+
+	const getTargetGroups = async(currentTargetGroupId) => {
+
+		return new Promise(async function( resolve, reject ){
+
+			var requestCommonParams;
+			try{
+				requestCommonParams = await getRequestCommonParams();
+			} catch(error){
+				return reject(new Error("Apiservices Api: error intentando generar request params " + error))
+			}
+
+			var finalUrl = NetexLMS.configuration['neds.apiservices.api.url'] + TARGET_GROUPS_URL;
+
+			if(currentTargetGroupId !== undefined && currentTargetGroupId != null){
+				finalUrl = finalUrl + new URLSearchParams({
+					loginContext: requestCommonParams.loginContext,
+					appCode: 'CALEN',
+					currentTargetGroupId: currentTargetGroupId
+				});
+			} else {
+				finalUrl = finalUrl + new URLSearchParams({
+					loginContext: requestCommonParams.loginContext,
+					appCode: 'CALEN'
+				});
+			}
+
+			fetch(finalUrl, {
+				method: 'GET',
+				headers:{
+					'Authorization': 'Bearer ' + requestCommonParams.authorizationCode,
+					'Content-type': 'application/json'
+				}
+			})
+			.then(NetexLMS.functions.handleFetchApiRequestErrors)
+			.then(async function(targetGroupsResponse) {
+				const targetGroupsJsonResponse = await targetGroupsResponse.json();
+				resolve(targetGroupsJsonResponse);
+		    }).catch(function(error) {
+		    	return reject(new Error("Apiservices Api: error intentando obtener destinatarios " + error));
+		    });
+		});
+	};
+
+	const redeemTargetGroups = async(targetGroupIds) => {
+
+		return new Promise(async function( resolve, reject ){
+
+			var requestCommonParams;
+			try{
+				requestCommonParams = await getRequestCommonParams();
+			} catch(error){
+				return reject(new Error("Apiservices Api: error intentando generar request params " + error))
+			}
+
+			var finalUrl = NetexLMS.configuration['neds.apiservices.api.url'] + REDEEM_TARGET_GROUPS_URL + new URLSearchParams({
+				loginContext: requestCommonParams.loginContext,
+				appCode: 'CALEN',
+				targetGroupIds: targetGroupIds
+			});
+
+			fetch(finalUrl, {
+				method: 'GET',
+				headers:{
+					'Authorization': 'Bearer ' + requestCommonParams.authorizationCode,
+					'Content-type': 'application/json'
+				}
+			})
+			.then(NetexLMS.functions.handleFetchApiRequestErrors)
+			.then(async function(redeemTargetGroupsResponse) {
+				const redeemTargetGroupsJsonResponse = await redeemTargetGroupsResponse.json();
+				resolve(redeemTargetGroupsJsonResponse);
+		    }).catch(function(error) {
+		    	return reject(new Error("Apiservices Api: error intentando obtener destinatarios " + error));
+		    });
+		});
+	};
+
+	const getSchoolClassTargets = (schoolClassId) => {
+		const targetSchoolClass = getTargetSchoolClass(schoolClassId);
+		return targetSchoolClass + '_students,' + targetSchoolClass + '_teachers,' + targetSchoolClass + '_guestTeachers,' + targetSchoolClass + '_coordinators,' + targetSchoolClass + '_family';
+	};
+
+	const getTargetSchoolClass = (schoolClassId) => {
+		var sifFormatSchoolClassId = SHORT_REF_ID_PATTERN + schoolClassId.padStart(12, '0');
+		var sifFormatSchoolId = SHORT_REF_ID_PATTERN + NetexLMS.context['schoolId'].padStart(12, '0');
+		var sifFormatLevelId = SHORT_REF_ID_PATTERN + NetexLMS.context['levelId'].padStart(12, '0');
+		var sifFormatSeasonId = SHORT_REF_ID_PATTERN + NetexLMS.context['ctxsid'].padStart(12, '0');
+
+		return 'sessions:' + sifFormatSeasonId + '_schools:' + sifFormatSchoolId + '_levels:' + sifFormatLevelId + '_classes_classes:' + sifFormatSchoolClassId;
+	}
+
+	const getSchoolTargets = () => {
+		var sifFormatSchoolId = SHORT_REF_ID_PATTERN + NetexLMS.context['schoolId'].padStart(12, '0');
+		var sifFormatLevelId = SHORT_REF_ID_PATTERN + NetexLMS.context['levelId'].padStart(12, '0');
+		var sifFormatSeasonId = SHORT_REF_ID_PATTERN + NetexLMS.context['ctxsid'].padStart(12, '0');
+
+		return 'sessions:' + sifFormatSeasonId + '_schools:' + sifFormatSchoolId + '_levels:' + sifFormatLevelId;
+	}
+
+	function getNedsTenantFromAvailableTenants(availableTenantsJson){
+        //Aplico el formato sif a las variables del LMS
+        var sifFormatSchoolId = SHORT_REF_ID_PATTERN + NetexLMS.context['schoolId'].padStart(12, '0');
+        var sifFormatLevelId = SHORT_REF_ID_PATTERN + NetexLMS.context['levelId'].padStart(12, '0');
+        var sifFormatSeasonId = SHORT_REF_ID_PATTERN + NetexLMS.context['ctxsid'].padStart(12, '0');
+        var sifFormatRoleId = SHORT_REF_ID_PATTERN + NetexLMS.context['ctxrid'].padStart(12, '0');
+
+		for (const nedsTenant of availableTenantsJson) {
+           if(nedsTenant.infoTenant.schoolId === sifFormatSchoolId
+        		   && nedsTenant.infoTenant.schoolLevelId === sifFormatLevelId
+        			   && nedsTenant.infoTenant.sessionId === sifFormatSeasonId
+        			   		&& nedsTenant.infoTenant.roleId === sifFormatRoleId){
+           	   return JSON.stringify(nedsTenant);
+           }
+        }
+
+		return null;
+	}
+
+	async function getRequestCommonParams() {
+		var nedsTenantContext = await apiServicesApi.getNedsTenantContext().catch((error) => {
+			throw new Error("Apiservices Api: error intentando recuperar tenant context del usuario " + error);
+		});
+
+		var authorizationCode = await connectAuthentication.getAuthorizationCode().catch((error) => {
+			throw new Error("Apiservices Api: error intentando recuperar access code del usuario " + error);
+		});
+
+		var loginContext = nedsTenantContext.loginContext;
+
+		return { loginContext, authorizationCode };
+	}
+
+	return {
+		getNedsTenantContext: getNedsTenantContext,
+		getTargetGroups: getTargetGroups,
+		getSchoolClassTargets: getSchoolClassTargets,
+		getTargetSchoolClass: getTargetSchoolClass,
+		redeemTargetGroups: redeemTargetGroups,
+		getSchoolTargets: getSchoolTargets
+	};
+}();

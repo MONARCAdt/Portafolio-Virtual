@@ -1,0 +1,85 @@
+button {
+    background: darkslategrey;
+    color: floralwhite;
+}
+/* accion cuando pasa el mouse */
+button:hover{
+    background:green;
+    color:grey;
+}
+/* accion cuando se da click */
+button:active{
+    background:mediumspringgreen;
+    color: mediumvioletred;
+
+}
+h1{
+    color: rgb(255, 255, 255);
+    background: rgb(32, 32, 32);    
+    padding: 50px;
+    text-align: center;
+    font-size: 50px;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    
+}
+/* h1:hover{
+    color:moccasin;
+    background: midnightblue;
+
+} */
+nav{
+    background: rgb(0, 0, 0);
+    padding: 10px;
+    display: flex;  
+    justify-content:space-around;
+
+}
+.nav-menu{  
+    display: inline-block;
+    background: #676767;
+    color: #f5f5f5;
+    padding: 10px 30px;
+   text-decoration: none;
+}
+.nav-menu:hover{
+    background: #ffffff;
+    color: #000000;
+}
+
+.mi-clase {
+    background-color: rgb(65, 65, 65);
+}
+
+.nav-menu:active{
+    background: rgb(223, 185, 33);
+}
+.colum{ 
+    background: #aaaaaa;
+    color: t#e2a024;
+    padding: 30px;
+    margin: 20px;
+    width: 70%;
+    font-size: 22px;
+    font-family: 'Open Sans', sans-serif;
+}
+.colum_info{ 
+    background: #aaaaaa;
+    color: t#e2a024;
+    padding: 20px;
+    margin: 20px;
+    width: 100%;
+    font-size: 22px;
+    font-family: 'Open Sans', sans-serif;
+}
+.colum_infoindex{ 
+    background: #aaaaaa;
+    color: t#e2a024;
+    padding: 30px;
+    margin: 20px;
+    width: 2000%;
+    font-size: 22px;
+    font-family: 'Open Sans', sans-serif;
+}
+.org{
+    display:inline-flex
+}

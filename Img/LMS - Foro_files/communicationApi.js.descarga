@@ -1,0 +1,127 @@
+var communicationApi = function(){
+	const UNREAD_COUNT_URL = (tenantId) => NetexLMS.configuration['neds.communication.api.url'] + `/tenants/${tenantId}/users/me/received/unread?`;
+	const SEND_MESSAGE_URL = (tenantId) => NetexLMS.configuration['neds.communication.api.url'] + `/tenants/${tenantId}/users/me/send?`;
+	const UPLOAD_FILE_URL = (tenantId) => NetexLMS.configuration['neds.communication.api.url'] + `/tenants/${tenantId}/users/me/uploadFileUrl?`;
+
+	const getUnreadCount = async() => {
+
+		return new Promise(async function( resolve, reject ){
+
+			var requestCommonParams;
+			try{
+				requestCommonParams = await getRequestCommonParams();
+			} catch(error){
+				return reject(new Error("Communication Api: error intentando generar request params " + error))
+			}
+
+			var finalUrl =  UNREAD_COUNT_URL(requestCommonParams.tenantId) + new URLSearchParams({
+	            loginContext: requestCommonParams.loginContext
+	        });
+
+			fetch(finalUrl, {
+				method: 'GET',
+				headers:{
+					'Authorization': 'Bearer ' + requestCommonParams.authorizationCode
+				}
+			})
+			.then(NetexLMS.functions.handleFetchApiRequestErrors)
+			.then(async function(getUnreadCountResponse) {
+				const unreadCountJsonResponse = await getUnreadCountResponse.json();
+				resolve(unreadCountJsonResponse);
+		    }).catch(function(error) {
+				return reject(new Error("Communication Api: error intentado obtener contador de mensajes recibidos sin leer " + error));
+		    });
+		});
+	};
+
+	const getUploadFileUrl = async(fileName) => {
+
+		return new Promise(async function( resolve, reject ){
+
+			var requestCommonParams;
+			try{
+				requestCommonParams = await getRequestCommonParams();
+			} catch(error){
+				return reject(new Error("Communication Api: error intentando generar request params " + error))
+			}
+
+			var finalUrl =  UPLOAD_FILE_URL(requestCommonParams.tenantId) + new URLSearchParams({
+				loginContext: requestCommonParams.loginContext,
+				fileName: fileName
+			});
+
+			fetch(finalUrl, {
+				method: 'GET',
+				headers:{
+					'Authorization': 'Bearer ' + requestCommonParams.authorizationCode
+				}
+			})
+			.then(NetexLMS.functions.handleFetchApiRequestErrors)
+			.then(async function(getUploadFileUrlResponse) {
+				const uploadFileUrlJsonResponse = await getUploadFileUrlResponse.json();
+				resolve(uploadFileUrlJsonResponse);
+		    }).catch(function(error) {
+				return reject(new Error("Communication Api: error intentado obtener url de subida " + error));
+		    });
+		});
+	};
+
+	const sendMessage = async(subject, body, targets, attachedFiles) => {
+
+		return new Promise(async function( resolve, reject ){
+
+			var requestCommonParams;
+			try{
+				requestCommonParams = await getRequestCommonParams();
+			} catch(error){
+				return reject(new Error("Communication Api: error intentando generar request params " + error))
+			}
+
+			var finalUrl =  SEND_MESSAGE_URL(requestCommonParams.tenantId) + new URLSearchParams({
+				loginContext: requestCommonParams.loginContext
+			});
+
+			fetch(finalUrl, {
+				method: 'POST',
+				headers:{
+					'Authorization': 'Bearer ' + requestCommonParams.authorizationCode,
+					'Content-type': 'application/json'
+				},
+				body: JSON.stringify({
+					body: body,
+					subject: subject,
+					targets: targets,
+					attachedFiles: attachedFiles
+				})
+			})
+			.then(NetexLMS.functions.handleFetchApiRequestErrors)
+			.then(async function(getSendMessageResponse) {
+				const sendMessageJsonResponse = await getSendMessageResponse.json();
+				resolve(sendMessageJsonResponse);
+		    }).catch(function(error) {
+		    	return reject(new Error("Communication Api: error intentado enviar mensaje " + error));
+		    });
+		});
+	};
+
+	async function getRequestCommonParams() {
+		var nedsTenantContext = await apiServicesApi.getNedsTenantContext().catch((error) => {
+			throw new Error("Communication Api: error intentando recuperar tenant context del usuario " + error);
+		});
+
+		var authorizationCode = await connectAuthentication.getAuthorizationCode().catch((error) => {
+			throw new Error("Communication Api: error intentando recuperar access code del usuario " + error);
+		});
+
+		var loginContext = nedsTenantContext.loginContext;
+		var tenantId = nedsTenantContext.infoTenant.schoolId;
+
+		return { loginContext, tenantId, authorizationCode };
+	}
+
+	return {
+		getUnreadCount: getUnreadCount,
+		getUploadFileUrl: getUploadFileUrl,
+		sendMessage: sendMessage
+	};
+}();

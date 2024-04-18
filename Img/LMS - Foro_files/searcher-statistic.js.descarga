@@ -1,0 +1,49 @@
+$(function () {
+
+    var SEARCHER_STATISTIC_URL = "statistics/search/create";
+    var STATISTIC_GENERATION_NAME_KEYWORD = "statistic-generation-name";
+    var ADVANCED_SEARCH_KEYWORD = "advanced-search";
+    var SCHOOLCLASS_KEYWORD = "schoolclasses";
+
+    $(document).delegate("form[data-" + STATISTIC_GENERATION_NAME_KEYWORD + "]", "submit", function() {
+        generateStatistic(this);
+    });
+
+    $(document).delegate("button[data-" + STATISTIC_GENERATION_NAME_KEYWORD + "]", "click", function() {
+        generateStatistic(this);
+    });
+
+    function generateStatistic(context) {
+
+        var data = {
+            searcherName: $(context).data(STATISTIC_GENERATION_NAME_KEYWORD),
+            isAdvancedSearch: $(context).data(ADVANCED_SEARCH_KEYWORD),
+            searchText: shouldSendText(context) ? $(context).find("input[type='text']").val() : '',
+            schoolClassId: getSchoolClassIdFromUrl()
+        };
+
+        $.ajax({
+          url: SEARCHER_STATISTIC_URL,
+          data: data,
+          method: 'post'
+        });
+    }
+
+    function shouldSendText(context) {
+        return !$(context).data(ADVANCED_SEARCH_KEYWORD);
+    }
+
+    function getSchoolClassIdFromUrl() {
+
+        if(window && window.location) {
+            var pathName = window.location.pathname;
+            var pathArray = pathName.split('/');
+            var idIndex = pathArray.indexOf(SCHOOLCLASS_KEYWORD) + 1;
+            if( idIndex > 0 ) {
+                return pathArray[idIndex];
+            }
+            return undefined;
+        }
+    }
+
+});

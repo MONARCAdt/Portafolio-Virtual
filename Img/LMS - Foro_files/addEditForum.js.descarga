@@ -1,0 +1,58 @@
+//Mostrar noty si hay errores en el formulario
+$("#ajaxModalFormComponentForm").on("validation:fail", function() {
+	var isKids = $(this).data('kids');
+    if (!isKids) {
+    	NetexLMS.functions.showNotyMessage("warning", NetexLMS.i18n['label.error.checkformulary']);
+    }
+});
+
+
+$('input#stablishDates').on('switchChange.bootstrapSwitch', function (event, state) {
+    if (state) {
+        $('div#datesContainer').removeClass("hidden");
+    } else {
+        $('div#datesContainer').addClass("hidden");
+    }
+
+});
+
+var conf = NetexLMS.configuration.getDateTimePickerConf({
+    sideBySide: true,
+    format: NetexLMS.i18n['dateFormat.pattern.MMDDYYYYHHMM'],
+    useCurrent: false
+});
+$("#startDate").datetimepicker(conf);
+$("#deadline").datetimepicker(conf);
+
+
+
+
+$("#topicView_saveButton").click(function(event) {
+	event.preventDefault();
+	event.stopImmediatePropagation();
+	if (NetexLMS.util.validation.validate($("#ajaxModalFormComponentForm"))) {
+		var a = $("#ajaxModalFormComponentForm").attr('action');
+		var data = $('#ajaxModalFormComponentForm').serialize();
+		 $.ajax({
+	        type: "POST",
+	        url: a,
+	        data: data,
+	        success: function (data, status, jqXHR) {
+	            if (data !== undefined) {
+	            	var isKids = $("#ajaxModalFormComponentForm").data('kids');
+	                if (!isKids) {
+	                	NetexLMS.functions.showNotyMessage("error", 'error');
+	                }
+	            } else {
+	                var redirectUrl = jqXHR.getResponseHeader(NetexLMS.constants.REDIRECT_HEADER);
+	                if (redirectUrl) {
+	                    window.location = redirectUrl;
+	                }
+	            }
+	        }
+
+		 });
+	}
+	return false;
+
+});

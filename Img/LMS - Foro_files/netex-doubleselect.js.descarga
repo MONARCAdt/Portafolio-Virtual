@@ -1,0 +1,329 @@
+/*
+ * @license
+ *
+ * Doubleselect v1.0.0
+ *
+ * Copyright (c) 2015 Netex
+ */
+
+if (typeof jQuery === 'undefined') {
+    throw new Error('doubleselect requires jQuery');
+}
+
+(function ($) {
+    'use strict';
+
+    var version = $.fn.jquery.split(' ')[0].split('.');
+	
+    if (version[0] < 2 && version[1] < 7) {
+        throw new Error('doubleselect requires jQuery version 1.7 or higher');
+    }
+})(jQuery);
+
+(function (factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module depending on jQuery.
+        define(['jquery'], factory);
+    } else {
+        // No AMD. Register plugin with global jQuery object.
+        factory(jQuery);
+    }
+}
+
+(function ($) {
+    'use strict';
+
+    var Doubleselect = (function($) {
+        /**	Doubleselect object constructor
+		 *
+		 *	@class Doubleselect
+		 *	@constructor
+		**/
+        function Doubleselect( $leftList, settings ) {
+            this.id = $leftList.prop('id');
+            this.left = $leftList;
+            this.right = $( settings.right ).length ? $( settings.right ) : $('#' + this.id + '_to');
+            this.actions = {
+                leftAll:        $( settings.leftAll ).length ? $( settings.leftAll ) : $('#' + this.id + '_leftAll'),
+                rightAll: 	$( settings.rightAll ).length ? $( settings.rightAll ) : $('#' + this.id + '_rightAll'),
+                leftSelected:	$( settings.leftSelected ).length ? $( settings.leftSelected ) : $('#' + this.id + '_leftSelected'),
+                rightSelected:	$( settings.rightSelected ).length ? $( settings.rightSelected ) : $('#' + this.id + '_rightSelected')
+            };
+			
+            delete settings.leftAll;
+            delete settings.leftSelected;
+            delete settings.right;
+            delete settings.rightAll;
+            delete settings.rightSelected;
+			
+            this.callbacks = settings;
+			
+            this.init();
+        }
+		
+        Doubleselect.prototype = {
+
+            // Functions
+            init: function() {
+                var self = this;
+
+                if ( typeof self.callbacks.startUp == 'function' ) {
+                    self.callbacks.startUp( self.left, self.right );
+                }
+				
+                self.events( self.actions );
+            },
+			
+            events: function( actions ) {
+                var self = this;
+				
+                self.left.on('click', '.option', function(e) {
+                    e.preventDefault();
+                    if ($(this).hasClass("selected")) {
+                        $(this).removeClass("selected");
+                    } else {
+                        $(this).addClass("selected");
+                    }
+                });
+				
+                self.right.on('click', '.option', function(e) {
+                    e.preventDefault();
+                    if ($(this).hasClass("selected")) {
+                        $(this).removeClass("selected");
+                    } else {
+                        $(this).addClass("selected");
+                    }
+                });
+
+                self.left.on('dblclick', '.option', function(e) {
+                    e.preventDefault();
+                    self.moveToRight(this, e);
+                });
+				
+                self.right.on('dblclick', '.option', function(e) {
+                    e.preventDefault();
+                    self.moveToLeft(this, e);
+                });
+
+                //TODO
+                // select all the options from left and right side
+                // when submiting the parent form
+                // self.right.closest('form').on('submit', function(e) {
+                // 	self.left.children().prop('selected', true);
+                // 	self.right.children().prop('selected', true);
+                // });
+				
+                // dblclick support for IE
+                if ( navigator.userAgent.match(/MSIE/i)  || navigator.userAgent.indexOf('Trident/') > 0 || navigator.userAgent.indexOf('Edge/') > 0) {
+                    self.left.dblclick(function(e) {
+                        actions.rightSelected.trigger('click');
+                    });
+					
+                    self.right.dblclick(function(e) {
+                        actions.leftSelected.trigger('click');
+                    });
+                }
+				
+                actions.rightSelected.on('click', function(e) {
+                    e.preventDefault();
+                    var options = self.left.find('.option.selected');
+					
+                    if ( options ) {
+                        self.moveToRight(options, e);
+                    }
+
+                    $(this).blur();
+                });
+				
+                actions.leftSelected.on('click', function(e) {
+                    e.preventDefault();
+                    var options = self.right.find('.option.selected');
+					
+                    if ( options ) {
+                        self.moveToLeft(options, e);
+                    }
+
+                    $(this).blur();
+                });
+				
+                actions.rightAll.on('click', function(e) {
+                    e.preventDefault();
+                    var options = self.left.find('.option');
+					
+                    if ( options ) {
+                        self.moveToRight(options, e);
+                    }
+
+                    $(this).blur();
+                });
+				
+                actions.leftAll.on('click', function(e) {
+                    e.preventDefault();
+					
+                    var options = self.right.find('.option');
+					
+                    if ( options ) {
+                        self.moveToLeft(options, e);
+                    }
+
+                    $(this).blur();
+                });
+            },
+			
+            moveToRight: function( options, event, silent ) {
+                var self = this;
+
+                if ( typeof self.callbacks.moveToRight == 'function' ) {
+                    return self.callbacks.moveToRight( self, options, event, silent );
+                } else {
+                    if ( typeof self.callbacks.beforeMoveToRight == 'function' && !silent ) {
+                        if ( !self.callbacks.beforeMoveToRight( self.left, self.right, options ) ) {
+                            return false;
+                        }
+                    }
+					
+                    self.right.append(options);
+					
+                    if (options.length == undefined) {
+                        $('div#'+self.id+' select  option[value="'+$(options).attr('data-value')+'"]').attr('selected','selected');
+                    } else {
+                        for (let i = 0; i < options.length; i++) {
+                            $('div#'+self.id+' select  option[value="'+$(options[i]).attr('data-value')+'"]').attr('selected','selected');
+                        }
+                    }
+
+                    self.right.find(".option.selected").each(function() {
+                        $(this).removeClass("selected");
+                    });
+					
+                    if ( typeof self.callbacks.afterMoveToRight == 'function' && !silent ){
+                        self.callbacks.afterMoveToRight( self.left, self.right, options );
+                    }
+					
+                    return self;
+                }
+            },
+			
+            moveToLeft: function( options, event, silent ) {
+                var self = this;
+				
+                if ( typeof self.callbacks.moveToLeft == 'function' ) {
+                    return self.callbacks.moveToLeft( self, options, event, silent );
+                } else {
+                    if ( typeof self.callbacks.beforeMoveToLeft == 'function' && !silent ) {
+                        if ( !self.callbacks.beforeMoveToLeft( self.left, self.right, options ) ) {
+                            return false;
+                        }
+                    }
+						
+                    self.left.append(options);
+					
+                    if (options.length == undefined) {
+                        $('div#'+self.id+' select option[value="'+$(options).attr('data-value')+'"]').removeAttr('selected');
+                    } else {
+                        for (let i = 0; i < options.length; i++) {
+                            $('div#'+self.id+' select option[value="'+$(options[i]).attr('data-value')+'"]').removeAttr('selected');
+                        }
+                    }
+
+                    self.left.find(".option.selected").each(function() {
+                        $(this).removeClass("selected");
+                    });
+					
+                    if ( typeof self.callbacks.afterMoveToLeft == 'function' && !silent ) {
+                        self.callbacks.afterMoveToLeft( self.left, self.right, options );
+                    }
+					
+                    return self;
+                }
+            }
+        }
+		
+        return Doubleselect;
+    })($);
+	
+    $.doubleselect = {
+        defaults: {
+            /**	will be executed once
+			 *
+			 *	@method startUp
+			**/
+            startUp: function( $left, $right ) {
+
+                //prepare options
+                $left.find("div").each(function(){
+                    if (!$(this).hasClass("option")) {
+                        $(this).addClass("option");
+                    }
+                });
+
+            },
+
+            /**	will be executed each time before moving option[s] to right
+			 *  
+			 *	IMPORTANT : this method must return boolean value
+			 *      true    : continue to moveToRight method
+			 *      false   : stop
+			 * 
+			 *  @method beforeMoveToRight
+			 *  @attribute $left jQuery object
+			 *  @attribute $right jQuery object
+			 *  @attribute options HTML object (the option[s] which was selected to be moved)
+			 *  
+			 *  @default true
+			 *  @return {boolean}
+			**/
+            beforeMoveToRight: function($left, $right, options) {
+                return true;
+            },
+
+            /*	will be executed each time after moving option[s] to right
+			 * 
+			 *  @method afterMoveToRight
+			 *  @attribute $left jQuery object
+			 *  @attribute $right jQuery object
+			 *  @attribute options HTML object (the option[s] which was selected to be moved)
+			**/
+            afterMoveToRight: function($left, $right, options){},
+
+            /**	will be executed each time before moving option[s] to left
+			 *  
+			 *	IMPORTANT : this method must return boolean value
+			 *      true    : continue to moveToRight method
+			 *      false   : stop
+			 * 
+			 *  @method beforeMoveToLeft
+			 *  @attribute $left jQuery object
+			 *  @attribute $right jQuery object
+			 *  @attribute options HTML object (the option[s] which was selected to be moved)
+			 *  
+			 *  @default true
+			 *  @return {boolean}
+			**/
+            beforeMoveToLeft: function($left, $right, option){
+                return true;
+            },
+
+            /*	will be executed each time after moving option[s] to left
+			 * 
+			 *  @method afterMoveToLeft
+			 *  @attribute $left jQuery object
+			 *  @attribute $right jQuery object
+			 *  @attribute options HTML object (the option[s] which was selected to be moved)
+			**/
+            afterMoveToLeft: function($left, $right, option){}
+
+        }
+    };
+
+    $.fn.doubleselect = function( options ) {
+        return this.each(function() {
+            var $this = $(this),
+            data = $this.data();
+			
+            var settings = $.extend({}, $.doubleselect.defaults, data, options);
+			
+            return new Doubleselect($this, settings);
+        });
+    };
+}));

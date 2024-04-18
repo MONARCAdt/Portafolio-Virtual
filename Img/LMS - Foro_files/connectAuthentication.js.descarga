@@ -1,0 +1,162 @@
+var connectAuthentication = (function () {
+	var CODE_VERIFIER;
+	var waitingForConnectCallback = false;
+
+	$(document).ready(() => {
+		//Bindeamos una función que se ejecuta al guardar en el localstorage
+		//ese guardado se hace en pkceRedirect.jsp
+		var nedsAccessCode = NetexLMS.functions.getCookie('nedsAccessCode');
+		if(nedsAccessCode == null){
+			$(window).on('storage', messageReceived);
+		}
+	});
+
+	async function getAuthorizationCode() {
+		var nedsAccessCode = NetexLMS.functions.getCookie('nedsAccessCode');
+		if(nedsAccessCode == null){
+			
+			if(!waitingForConnectCallback){
+				
+				waitingForConnectCallback = true;
+				
+				//Seteo el code verifier como variable global
+				CODE_VERIFIER = generateCodeVerifier();
+	
+				let pkceEndpoint = JSON.parse(NetexLMS.configuration['neds.connectAuthentication.dicoveryService.response']).authorization_endpoint
+				    + '?client_id='
+				    + NetexLMS.configuration['neds.connectAuthentication.clientId']
+					+ '&grant_type=authorization_code'
+					+ '&response_type=code'
+					+ '&redirect_uri=' + NetexLMS.configuration['neds.connectAuthentication.pkce.endpoint']
+					+ '&scope=' + NetexLMS.configuration['neds.connectAuthentication.scope']
+					+ '&code_challenge_method=S256'
+					+ '&code_challenge=' + await generateChallengeFromVerifier(CODE_VERIFIER);
+	
+				//Abrimos connect en otra nueva pestaña
+				window.open(pkceEndpoint);
+	
+				return waitForConnectCallback();
+			} else {
+				return waitForConnectCallback();
+			}
+		} else {
+			return JSON.parse(nedsAccessCode).access_token;
+		}
+	}
+	
+	async function waitForConnectCallback(){
+		//Quedamos esperando a que el callback de connect rellene la cookie
+		return await new Promise(resolve => {
+			//Función que comprueba cada 3 segundos si se seteó la cookie
+			const interval = setInterval(() => {
+				var nedsAccessCodeCookie = NetexLMS.functions.getCookie('nedsAccessCode');
+				if(nedsAccessCodeCookie != null){
+					resolve(JSON.parse(nedsAccessCodeCookie).access_token);
+					clearInterval(interval);
+					waitingForConnectCallback = false;
+				}
+			}, 3000);
+		});
+	}
+
+	function generateCodeVerifier() {
+	    var array = new Uint32Array(56/2);
+	    window.crypto.getRandomValues(array);
+	    return Array.from(array, dec2hex).join('');
+
+	    function dec2hex(dec) {
+	        return ('0' + dec.toString(16)).substr(-2)
+	    }
+	}
+
+	async function generateChallengeFromVerifier(codeVerifier) {
+	    return base64urlencode(await sha256(codeVerifier));
+
+	    function base64urlencode(a) {
+	        var str = "";
+	        var bytes = new Uint8Array(a);
+	        var len = bytes.byteLength;
+	        for (var i = 0; i < len; i++) {
+	            str += String.fromCharCode(bytes[i]);
+	        }
+	        return btoa(str)
+	            .replace(/\+/g, "-")
+	            .replace(/\//g, "_")
+	            .replace(/=+$/, "");
+	    }
+
+	    function sha256(plain) {
+	        const encoder = new TextEncoder();
+	        const data = encoder.encode(plain);
+	        return window.crypto.subtle.digest('SHA-256', data);
+	    }
+	}
+
+	const getTokenByCode = async (code, codeVerifier) => {
+
+		var tokenEndpoint = JSON.parse(NetexLMS.configuration['neds.connectAuthentication.dicoveryService.response']).token_endpoint;
+
+	    const getTokenResponse = await fetch(tokenEndpoint, {
+	        method: 'POST',
+	        body: new URLSearchParams({
+	            grant_type: 'authorization_code',
+	            code_verifier: codeVerifier,
+	            code: code,
+	            client_id: NetexLMS.configuration['neds.connectAuthentication.clientId'],
+	            redirect_uri: NetexLMS.configuration['neds.connectAuthentication.pkce.endpoint']
+	        }),
+	    });
+	    if (getTokenResponse.ok) {
+	        const tokenJsonResponse = await getTokenResponse.json();
+	        return Promise.resolve(tokenJsonResponse)
+	    } else {
+			throw new Error("ConnectAuthentication: error llamando al servicio de obtención del token " + getTokenResponse.error);
+	    }
+	};
+
+	//Función que recoje el evento de guardado en el localstorage
+	function messageReceived(ev){
+		//Solo seguimos ejecutando la función si se ha guardado la key pkce_auth_channel
+		//si no es así, no hacemos nada y lanzamos un return
+		if (ev.originalEvent.key !='pkce_auth_channel') return;
+		var authCode = ev.originalEvent.newValue;
+	    if (!authCode) return;
+
+		$(window).off('storage');
+
+	    getTokenByCode(authCode, CODE_VERIFIER).then((tokenResponse) => {
+	    	NetexLMS.functions.setCookie('nedsAccessCode', JSON.stringify(tokenResponse), tokenResponse.expires_in);
+	    }).catch((error) => {
+	        console.error("ConnectAuthentication: error en la llamada al método de obtención del token " + error);
+	    })
+	}
+
+	function doConnectLogout(){
+		var lmsLogoutEndpoint = window.location.origin + '/' + window.location.pathname.split('/')[1] + '/logout'
+		var nedsAccessCode = NetexLMS.functions.getCookie('nedsAccessCode');
+		if(nedsAccessCode != null){
+
+			//Recuperamos el endpoint de logout
+			var endSessionEndpoint = JSON.parse(NetexLMS.configuration['neds.connectAuthentication.dicoveryService.response']).end_session_endpoint;
+
+			var finalUrl = endSessionEndpoint + '?' + new URLSearchParams({
+				id_token_hint: JSON.parse(nedsAccessCode).id_token,
+				post_logout_redirect_uri: lmsLogoutEndpoint
+			});
+
+			//Vaciamos las cookies que definen la sesion del usuario en neds
+			NetexLMS.functions.setCookie('nedsAccessCode', '');
+			NetexLMS.functions.setCookie('nedsTenantContext', '');
+
+			//Navegamos a la url de logout de connect
+			window.location.href = finalUrl;
+		} else {
+			window.location.href = lmsLogoutEndpoint;
+		}
+	}
+
+    return {
+    	getAuthorizationCode: getAuthorizationCode,
+    	doConnectLogout: doConnectLogout
+    };
+})();

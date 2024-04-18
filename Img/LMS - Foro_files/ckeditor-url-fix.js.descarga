@@ -1,0 +1,35 @@
+NetexLMS = NetexLMS || {};
+NetexLMS.contentEditable = {
+
+    /**
+     *Convierte, en el contenido del CKEditor, las url's absolutas procedentes del LMS a relativas, para que los links
+     *sean válidos entre consolas.
+     *Este método se engancha a los eventos de submit de los formularios de la página, chequeando los textarea de los
+     *mismos en busca de componentes del ckEditor asociados. Una vez detectados, se procede a procesar el contenido
+     *para sustituír las url's absolutas procedentes del LMS, convirtiéndolas en relativas.
+     *@return {void}
+    */
+    processUrls: function() {
+
+		var forms = document.querySelectorAll("form");
+		for(var i = 0; i < forms.length; i++) {
+            if(forms[i].getElementsByTagName("textarea").length !== 0) {
+                forms[i].onsubmit = function() {
+
+                    var textAreas = this.querySelectorAll("textarea");
+                    for(var j = 0; j < textAreas.length; j++) {
+
+                        var textAreaCKEditor = document.getElementById("cke_" + textAreas[j].id);
+                        if (textAreaCKEditor != null) {
+                            var base = document.getElementsByTagName('base')[0];
+                            ckEditorInstance = CKEDITOR.instances[textAreas[j].id];
+                            ckEditorInstance.setData(ckEditorInstance.getData().split(base.href).join(""));
+                        }
+                    }
+                }
+            }
+		}
+    }
+};
+
+NetexLMS.contentEditable.processUrls();

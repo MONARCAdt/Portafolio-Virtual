@@ -1,0 +1,353 @@
+//En el archivo js/3.0/ei8.js esta el resto de codigo que no debe de leerse en ei8, pero si en el resto de navegadores
+NetexLMS = NetexLMS || {};
+NetexLMS.page = NetexLMS.page || {};
+NetexLMS.page.mainDecorator = NetexLMS.page.mainDecorator || {};
+NetexLMS.page.mainDecorator.previousSelected = NetexLMS.page.mainDecorator.previousSelected || {};
+
+// Show/hide notification popup depends on size screen
+function checkPosition() {
+    if ($(window).width() < 768) {
+        $("#bottom-navbar-collapse .dropdown-toggle").removeAttr("data-toggle");
+        $(".dropdown-notifications").addClass("hidden");
+    }
+    if ($(window).width() > 768) {
+		$("#bottom-navbar-collapse .dropdown-toggle").attr("data-toggle", "dropdown");
+        $(".dropdown-notifications").removeClass("hidden");
+    }
+}
+
+$( document ).ready(function() {
+
+	var seasonPreviousValue = $('#seasonId').val();
+	var stagePreviousValue = $('#stageId').val();
+	$('#seasonId, #stageId').change(function(){
+
+        $.ajax({
+            type: "POST",
+            data: $(this).closest('form').serialize(),
+            url: $(this).closest('form').attr("action"),
+            success: function (data, status, jqXHR) {
+                if (data !== '') {
+                    NetexLMS.functions.showNotyMessage("error", data);
+                    $('#seasonId').val(seasonPreviousValue);
+					$('#seasonId').selectpicker('refresh');
+
+                    $('#stageId').val(stagePreviousValue);
+					$('#stageId').selectpicker('refresh');
+                } else {
+//                	Redirige al inicio
+                    var redirectUrl = jqXHR.getResponseHeader(NetexLMS.constants.REDIRECT_HEADER);
+                    if (redirectUrl) {
+                        window.location = redirectUrl;
+                    }
+                }
+            }
+        });
+    });
+
+	$('.seasonId').click(function(){
+		var data = { seasonId : $(this).data("key") };
+		var url = $(this).data("href");
+	        $.ajax({
+	            type: "POST",
+	            data: data,
+	            url: url,
+	            success: function (data, status, jqXHR) {
+	                if (data !== '') {
+	                    NetexLMS.functions.showNotyMessage("error", data);
+	                    $('#seasonId').val(seasonPreviousValue);
+						$('#seasonId').selectpicker('refresh');
+	                } else {
+//	                	Redirige al inicio
+	                    var redirectUrl = jqXHR.getResponseHeader(NetexLMS.constants.REDIRECT_HEADER);
+	                    if (redirectUrl) {
+	                        window.location = redirectUrl;
+	                    }
+	                }
+	            }
+	        });
+	    });
+
+    $('#loadContactFormModalButton').click(function (event) {
+        event.preventDefault();
+        NetexLMS.functions.loadAjaxModal(NetexLMS.configuration.contactformurl, "contactModalContainer");
+    });
+
+    // Sidemenu dropdown buttons
+    $("li.class-progress-list").click(function () {
+        if ($("a#btn-classes span:last-child").hasClass("chevron-down")) {
+            $("a#btn-classes span:last-child").removeClass("chevron-down").addClass("chevron-top");
+        } else {
+            $("a#btn-classes span:last-child").addClass("chevron-down").removeClass("chevron-top");
+        }
+    });
+    $("li.banner-lg > a").click(function () {
+        if ($("a#btn-banner span").hasClass("plus-circle")) {
+            $("a#btn-banner span").removeClass("plus-circle").addClass("minus-circle");
+        } else {
+            $("a#btn-banner span").addClass("plus-circle").removeClass("minus-circle");
+        }
+    });
+
+    $(".side-menu li, .side-menu-kids__button, .navbar-kids__button:not(.dropdown-toggle)").click(function () {
+        $(".side-menu li, .side-menu-kids__button, .navbar-kids__button:not(.dropdown-toggle)").removeClass("active");
+    $(this).addClass("active");
+    });
+
+    // Footer
+    $(document).ready(function() {
+        var widthContainerFuild = $(".container-fluid").width();
+        $(".contenedor-footer-sidebar").width(widthContainerFuild);
+    });
+    window.onresize = function(event) {
+        var widthContainerFuild = $(".container-fluid").width();
+        $(".contenedor-footer-sidebar").width(widthContainerFuild);
+    };
+
+
+    // Navbar notification buttons
+     function navbarButtonsVisibility() {
+        if ($(".notification-list .btn").length = 0 || $(".notification-list .btn.hidden").length > 0) {
+            $(this).find(".notificacion-date").show();
+        } else {
+            $(".notification-list").mouseenter(function () {
+                $(this).find(".notificacion-date").hide();
+                $(this).find(".btn").show();
+            }).mouseleave(function () {
+                $(this).find(".notificacion-date").show();
+                $(this).find(".btn").hide();
+            });
+        }
+    }
+    navbarButtonsVisibility();
+
+    window.onload = checkPosition;
+    $(window).bind("resize", checkPosition);
+
+    // Touch screen special code
+    if (NetexLMS.browser.isTouchDevice()) {
+        $(".notification-list").find(".notificacion-date").hide();
+        $(".notification-list").find(".btn").show();
+    } else {
+        $(".notification-list").find(".notificacion-date").show();
+        $(".notification-list").find(".btn").hide();
+    }
+
+    // Activar tooltip
+    $('.pretty-tooltip').tooltip({
+        container: "body",
+        trigger : 'hover'
+    });
+
+    // iOS special code
+    if (NetexLMS.browser.isIOS()) {
+        // prevent double tap
+        $('a.pretty-tooltip').on('click touchend', function(e) {
+          window.location = $(this).attr('href');
+       });
+    }
+
+	//Funcion para que las tablas sean clicables en toda la fila
+    NetexLMS.functions.multiClickTable();
+
+
+ // preventing multiple form submits
+    $("form:not(#projectsClass-advancedSearch form, #advanced-search form, #mainDctAlertsForm, .searchbox-form-custom, #loginForm, #accessForm, .force-enable-submit)")
+        .on("submit", function(){
+            $(this).find("[type=submit]").prop("disabled", true);
+            return true;
+    });
+
+    $("form#mainDctAlertsForm").find("button[type='submit']").click(function(e) {
+
+        e.preventDefault();
+        var form = $(this).closest("form");
+        var deleteId = $(this).val();
+
+        function onSuccess() {
+            form.find("input#mainDctDeleteAlertId").val(deleteId);
+            form.submit();
+        }
+
+        NetexLMS.functions.showConfirmModal("deleteNotificationModalId", NetexLMS.i18n['button.label.close'], NetexLMS.i18n['button.label.remove'],
+                NetexLMS.i18n['notification.label.deleteconfirm'], null, onSuccess);
+
+    });
+
+    $("form#mainDctRelativeView").find("li").on("click", function(e) {
+    	NetexLMS.page.mainDecorator.previousSelected = $("form#mainDctRelativeView li.selected").attr('data-original-index');
+    	if (!$(this).hasClass("selected"))	{
+        	$('[name="personId"] [selected="selected"]').removeAttr("selected");
+        	var idx = $(e.currentTarget).attr('data-original-index');
+        	$('[name="personId"] option:eq('+idx+')').attr('selected', 'selected');
+        	$("form#mainDctRelativeView").submit();
+    	}
+    });
+
+    $("form#mainDctRelativeView").on("validation:fail", function () {
+    	$('[name="personId"] [selected="selected"]').removeAttr("selected");
+    	$('[name="personId"] option:eq('+NetexLMS.page.mainDecorator.previousSelected+')').attr('selected', 'selected');
+        NetexLMS.functions.showNotyMessage("error", NetexLMS.i18n['changeSeason.error.hasNotPin']);
+    });
+
+    $('a.select-children').on("click", function(e) {
+    	if (NetexLMS.page.mainDecorator.previousSelected > -1)	{
+        	$("form#mainDctRelativeView li.selected").removeClass("selected");
+        	$('form#mainDctRelativeView [data-original-index='+NetexLMS.page.mainDecorator.previousSelected+']').addClass("selected");
+        	$("form#mainDctRelativeView span.filter-option").text($('[name="personId"] [selected="selected"]').text());
+    	}
+    });
+
+    $("#serviceDeskCreateRequestContainer").on("submit:success",	function(event, data) {
+
+    	if (data.responseJSON.error != null)	{
+    		NetexLMS.functions.showNotyMessage('error', data.responseJSON.error);
+    	} else {
+    		$('#ajaxModalFormComponent').modal('hide');
+    		$('#ajaxModalFormComponent').remove();
+            $('.modal-backdrop').remove();
+            $('body').removeClass("modal-open");
+            $('body').css("padding-right", "");
+    		NetexLMS.functions.showNotyMessage('success', data.responseJSON.success);
+    	}
+    });
+
+    //Poner color de fondo en la cabecera solo cuando se hace scroll
+    $(window).scroll(function() {
+        if($(window).scrollTop() > 0) {
+
+            var color = '#5BBAE8';
+            var rgbaCol = 'rgba(' + parseInt(color.slice(-6,-4),16)
+                + ',' + parseInt(color.slice(-4,-2),16)
+                + ',' + parseInt(color.slice(-2),16)
+                +',0.3)';
+            $('.navbar-kids').css('background-color', rgbaCol);
+
+        } else{
+            var color = '#5BBAE8';
+            var rgbaCol0 = 'rgba(' + parseInt(color.slice(-6,-4),16)
+                + ',' + parseInt(color.slice(-4,-2),16)
+                + ',' + parseInt(color.slice(-2),16)
+                +',0)';
+            $(".navbar-kids").css("background-color", rgbaCol0);
+        }
+    });
+
+    //Cuando se abre el menu lateral poner fondo oscuro en el contenido
+    $(".navbar-kids__header--button.menu-lateral").click(function () {
+        $(".container-kids").before('<div class="background"></div>');
+    });
+    $(document).click(function () {
+        if ($(".side-menu-kids").hasClass("in")) {
+            $(".side-menu-kids").removeClass("in");
+            $(".background").remove();
+            $(".side-menu-kids__close-button").addClass("collapsed");
+            $(".side-menu-kids__close-button").attr("aria-expanded", "false");
+        }
+    });
+
+
+    //Cargamos los banners y los guardamos/recuperamos del localStorage
+    var loadBanners = function (bannersURL, accessId) {
+    	function isCachedBanners() {
+            return (localStorage.getItem('cachedBannersAccessId') == accessId);
+        }
+
+    	if (isCachedBanners()) {
+    		$('#bannerList').html(localStorage.getItem('bannerData'));
+    	} else {
+            $.ajax({
+                type: "GET",
+                url: bannersURL,
+                success: function (data) {
+                	localStorage.setItem('bannerData', data);
+                	localStorage.setItem('cachedBannersAccessId', accessId);
+                    $('#bannerList').html(data);
+                }
+            });
+    	}
+    };
+
+    if("" != $('#mainDctGetBannersURL').val()) {
+        loadBanners($('#mainDctGetBannersURL').val(), $('#currentAccesId').val());
+    }
+    
+    //NEDS
+    if(NetexLMS.configuration['neds.enabled'] === 'true'){ 
+     	//Hacemos que el logout llame al logout de neds
+        $(document).delegate('.logoutButton', 'click', function () {
+        	connectAuthentication.doConnectLogout();
+        	return false;
+        });
+	}
+
+    //Neds Communication
+    if(NetexLMS.configuration['neds.communication.enabled'] === 'true'){
+
+    	//Hacemos que los enlaces a la nueva mensajeria se abran en pestañas aparte
+    	$('#messagesLink').attr('target', '_blank');
+    	$('span.icon-uno.envelope.icon-base').parent().attr('target', '_blank');
+
+        communicationApi.getUnreadCount().then((unreadCount) => {
+        	if(unreadCount > 0) {
+        		if ($('#messagesLink').hasClass('navbar-kids__button')) {
+        			$('#messagesLink').append('<div class="navbar-kids__button--bubble">'+ unreadCount + '</div>');
+        		} else {
+        			$('#messagesLink').append('<div class="profile-notifications-bubble">'+ unreadCount + '</div>');
+        			$('div.side-menu').find('span.icon-uno.envelope.icon-base').after('<span class="badge badge-custom">'+ unreadCount + '</span>');
+        		}
+
+        	}
+        });
+    }
+
+    if(NetexLMS.configuration['neds.attendance.enabled'] === 'true'){
+        //Hacemos que los enlaces a la nueva mensajeria se abran en pestañas aparte
+        $('span.icon-uno.files.icon-base').parent().attr('target', '_blank');
+    }
+
+    if(NetexLMS.configuration['neds.notification.enabled'] === 'true') {
+        //Hacemos que los enlaces a las nuevas notificaciones se abran en pestañas aparte
+        $('a#notificationsLink').attr('target', '_blank');
+        $('span.icon-uno.bell.icon-base').parent().attr('target', '_blank');
+        $('span.icon-uno.bell-kids').parent().attr('target', '_blank');
+
+
+        notificationApi.getNotificationsCount().then((notifCount) => {
+            if(notifCount > 0) {
+                if ($('#notificationsLink').hasClass('navbar-kids__button')) {
+                    $('#notificationsLink').append('<div class="navbar-kids__button--bubble">'+ notifCount + '</div>');
+                } else {
+                    $('#notificationsLink').append('<div class="profile-notifications-bubble">'+ notifCount + '</div>');
+                    $('div.side-menu').find('span.icon-uno.bell.icon-base').after('<span class="badge badge-custom">'+ notifCount + '</span>');
+                }
+
+            }
+        });
+    }
+
+
+    if (NetexLMS.twConfiguration) {
+        let config = NetexLMS.twConfiguration;
+        config.cssRoute = 'js/3.0/toolbar-widget/toolbar-widget/css/main.css';
+        config.resourcesRoute = 'js/3.0/toolbar-widget/toolbar-widget/resources';
+        config.idParent = 'toolbar-widget-container';
+
+        widgetToolbar(NetexLMS.twConfiguration);
+    }
+
+
+    // check if noty is required
+    if (NetexLMS.functions.getQueryParameter(window.location, 'notificationMessageKey')) {
+        NetexLMS.functions.showNotyMessage('warning', NetexLMS.i18n[NetexLMS.functions.getQueryParameter(window.location, 'notificationMessageKey')]);
+    }
+		
+	const interval = setInterval(() => {
+		var ediLoginCookie = NetexLMS.functions.getCookie('EDI_ACCESS');
+		if(ediLoginCookie === null || ediLoginCookie.trim() === ""){
+			clearInterval(interval);
+			$(".logoutButton")[0].click();
+		}
+	}, 3000);
+		
+});

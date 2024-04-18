@@ -1,0 +1,119 @@
+// resource checkbox clicked
+function individualCheckBoxAction(ele,prefix){
+    if(!prefix){
+        prefix='';
+    }
+    // if individual checkbox is unselected, unselect the global select all checkbox
+    if(!ele.checked){
+        var globalSelectAllCheckbox = document.getElementById(prefix+'globalSelectAllCheckbox');
+        if(globalSelectAllCheckbox){
+            globalSelectAllCheckbox.checked = false;
+        }
+    }
+    enableDisableGlobalDeleteButton(ele,prefix);    
+}
+
+function enableDisableGlobalDeleteButton(ele,prefix){
+    if(!prefix){
+        prefix='';
+    }    
+    var deleteTopButton = document.getElementById(prefix+'deleteTopButton');
+    var deleteBottomButton = document.getElementById(prefix+"deleteBottomButton");
+    var anotherTopButton = document.getElementById(prefix+"anotherTopButton");
+    var anotherBottomButton = document.getElementById(prefix+"anotherBottomButton");
+    // if current check box is selected
+    if(ele && ele.checked){
+        enableDeleteButtons(deleteTopButton, deleteBottomButton);
+        enableDeleteButtons(anotherBottomButton, anotherTopButton);
+        return;
+    }
+    
+    // if current checkbox deselected
+    // check if at least one checkbox is selcted
+    var inputs  = document.getElementsByTagName('input');
+    var disableDeleteButtonsFlag = true;
+    for(var c = 0; c < inputs.length; c++){
+        if(inputs[c].type == "checkbox"){
+            var checkBox = inputs[c];
+            var checkBoxId = checkBox.getAttribute("id");
+            // check if checkbox id start with provided prefix or defalut 'add'
+            if(checkBoxId && checkBoxId.startsWith(prefix?prefix:'add')){
+                // if checkbox not disabled
+                if(!checkBox.disabled){
+                    // if at least one checkbox selected
+                    if(checkBox.checked){
+                        disableDeleteButtonsFlag = false;
+                        // elable the delete buttons
+                        enableDeleteButtons(deleteTopButton, deleteBottomButton);
+                        enableDeleteButtons(anotherTopButton, anotherBottomButton);
+                        break;
+                    }
+                }
+            }
+        }
+    }    
+    // if none of the checkbox selected then disable the delete buttons
+    if(disableDeleteButtonsFlag){
+        disableDeleteButtons(deleteTopButton, deleteBottomButton);
+        disableDeleteButtons(anotherTopButton, anotherBottomButton);
+    }
+}
+
+function enableGlobalSelectAllCheckbox(prefix){
+    if(!prefix){
+        prefix = "";
+    }
+    var globalSelectAllCheckbox = document.getElementById(prefix+'globalSelectAllCheckbox');
+    var inputs  = document.getElementsByTagName('input');
+    for(var c = 0; c < inputs.length; c++){
+        if(inputs[c].type == "checkbox"){            
+            var checkBox = inputs[c];
+            var checkBoxId = checkBox.getAttribute("id");
+            // check if checkbox id start with provided prefix or defalut 'add'
+            if(checkBoxId && checkBoxId.startsWith(prefix?prefix:'add')){                
+                // enable the globle select all button, if at least one checkbox is not disabled
+                if(!checkBox.disabled && globalSelectAllCheckbox){
+                    globalSelectAllCheckbox.removeAttribute('disabled');
+                    break;
+                }
+            }
+        }
+    }
+}
+
+function actionAllCheckbox(ele,prefix){
+    var inputs  = document.getElementsByTagName('input');
+    for(var c = 0; c < inputs.length; c++){
+        if(inputs[c].type == "checkbox"){
+            var checkBox = inputs[c];
+            var checkBoxId = checkBox.getAttribute("id");
+            // check if checkbox id start with provided prefix or defalut 'add' 'add2'
+            if(checkBoxId && (checkBoxId.startsWith(prefix?prefix:'add') || checkBoxId.startsWith(prefix?prefix:'add2'))){
+                // check checkbox, if checkbox is not desabled
+                if(!checkBox.disabled){
+                    checkBox.checked=ele.checked;
+                }
+            }
+        }
+    }
+    // enable/disable globle delete buttons
+    enableDisableGlobalDeleteButton(ele,prefix);
+}
+
+function disableDeleteButtons(deleteTopButton, deleteBottomButton){
+    if(deleteTopButton){
+        deleteTopButton.setAttribute("disabled",true);
+    }
+    if(deleteBottomButton){
+        deleteBottomButton.setAttribute("disabled",true);
+    }
+}
+
+function enableDeleteButtons(deleteTopButton, deleteBottomButton){
+    if(deleteTopButton){
+        deleteTopButton.removeAttribute('disabled');
+    }
+    if(deleteBottomButton){
+        deleteBottomButton.removeAttribute('disabled');    
+    }
+}

@@ -1,0 +1,74 @@
+//javascript file for home forum jsp
+
+function schoolClassForumHomeJS(){
+    //popup para borrar
+    $("#deleteTopButton,#deleteBottomButton").click(function(){
+         if($('input[name="checkbox"]:checked').length>0){
+            NetexLMS.functions.showConfirmModal('idModal', NetexLMS.i18n['button.label.cancel'], NetexLMS.i18n['button.label.delete'],
+                NetexLMS.i18n['SchoolClassForum.deleteTopics'], null, function(){ $('#multipleDeleteForm').submit() });
+        }
+    });
+    //se encarga de marcar o desmarchar todos los checkboxes individuales y activar o desactivar los botones
+    $("#globalSelectAllCheckbox").click(function(){
+        actionAllCheckbox(this);
+    });
+    //se encarga de marcar o desmarchar un checkbox individual y activar o desactivar los botones
+    $("input[id^='add_']").click(function(){
+        individualCheckBoxAction(this);
+    });
+
+}
+
+function lockUnlockTopic(buttonConfirm, message, url)	{
+    NetexLMS.functions.showConfirmModalForm('modalId', NetexLMS.i18n["button.label.cancel"],
+            buttonConfirm, message, null, url);
+}
+
+
+$(document).delegate('.card-kids-forum', "click", function() {
+	if(event.target.parentElement.className != 'edit-forum-topic' && event.target.parentElement.className != 'delete-forum-topic'){
+		var url = $(this).data('url');
+		window.location.href = url;
+	}
+
+});
+
+$(document).delegate('.edit-forum-topic', "click", function() {
+	event.stopPropagation();
+    event.preventDefault();
+	var url = $(this).data('href');
+	NetexLMS.functions.loadAjaxModal(url, 'editForumTopicModalContainer', function(){$('#modal-createEdit-forumTopic').modal()});
+});
+
+$(document).delegate('.delete-forum-topic', "click", function() {
+    event.stopPropagation();
+    event.preventDefault();
+    var deleteForumUrl = $(this).data("href");
+    NetexLMS.functions.showConfirmModalFormKids('modal-delete', NetexLMS.i18n['button.label.cancel'], NetexLMS.i18n['button.label.remove'],
+            NetexLMS.i18n['SchoolClassForum.deleteTopics'], NetexLMS.i18n['lable.deleteForum'],  deleteForumUrl);
+})
+
+
+$(document).ready(function(){
+	$.each($(".simpleSearch"), function() {
+		checkValue($(this));
+	});
+	$(".simpleSearch").keyup(function() {
+		checkValue($(this));
+	});
+	$(".btn-clean-search").click(function() {
+		$(this).siblings(".simpleSearch").val('');
+		$(this).hide();
+		$(this).siblings(".input-group-btn").children(".button-search").click();
+	});
+
+	function checkValue(element) {
+		if (element.val() && element.val().length >= 1) {
+			// Exist text in your input
+			element.siblings(".btn-clean-search").css('display','flex');
+		} else {
+			element.siblings(".btn-clean-search").css('display','none');
+		}
+	}
+	NetexLMS.functions.scrollTable();
+});

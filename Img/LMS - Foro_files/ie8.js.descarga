@@ -1,0 +1,23 @@
+// Codigo js que no funciona en ie8
+
+// Navbar: el combo de ciclos se cierra al clicar en la pantalla si es mayor de 768
+$(document).on('click',function(){
+    if($("#infoSchool, #infoChildren").hasClass("in") && $(window).width() > 768) {
+        $('.collapse.toggle-info-school').removeClass('in').removeAttr('aria-expanded');   
+    }
+});
+// Navbar: el combo de ciclos se cierra al redimensionar la pantalla
+$(window).resize(function(){
+    if($("#infoSchool, #infoChildren").hasClass("in") ) {
+        $('.collapse.toggle-info-school').removeClass('in').removeAttr('aria-expanded'); 
+        $('.custom-select').removeClass('open');   
+    }
+});
+// Navbar: codigo para que funcione el desplegable de ciclos en pantalla menores de 768
+$(".list-info-school .editable-input").click(function () {
+    if ($(window).width() < 768) {
+        $(this).find('.custom-select').toggleClass('open');
+    }
+});
+        
+

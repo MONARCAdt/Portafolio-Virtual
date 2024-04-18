@@ -1,0 +1,177 @@
+$(document).ready(function () {
+
+    let mediaRecorder;
+    let recordTimer = 0;
+    let recordInterval;
+    let trackAudio;
+    URL = window.URL || window.webkitURL;
+    let gumStream;
+    let rec;
+    let input;
+    let AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioContext;
+
+
+    $.when(
+        $.getScript( "js/3.0/recorder.js" ),
+        $.getScript( "https://sdk.amazonaws.com/js/aws-sdk-2.1447.0.min.js" ),
+        $.Deferred(function( deferred ){
+            $( deferred.resolve );
+        })
+    ).done(function(){
+            AWS.config.update({
+                accessKeyId: NetexLMS.configuration['awsAccessId'],
+                secretAccessKey: NetexLMS.configuration['awsSecretKey']
+            });
+
+            let s3 = new AWS.S3();
+
+            $(".btn-record-audio").click(function () {
+                $(this).addClass("hidden");
+                $(this).closest(".audio-player").find("#timePlay").addClass("hidden");
+                $(this).closest(".audio-player-box").addClass("open");
+                $(this).closest(".audio-player").find(".btn-stop-audio-recorded, #timeRecord, .btn-delete-audio").removeClass("hidden");
+                $(this).closest(".audio-player").find(".btn-delete-audio").addClass("margin-left-auto");
+                recordAudio();
+
+            });
+
+
+            function recordAudio() {
+
+                navigator.mediaDevices.getUserMedia({audio: true})
+                    .then(function (stream) {
+                        mediaRecorder = new MediaRecorder(stream);
+                        recordTimer = 0;
+                        audioContext = new AudioContext();
+                        gumStream = stream;
+                        input = audioContext.createMediaStreamSource(stream);
+                        rec = new Recorder(input,{numChannels:1});
+                        rec.record();
+
+                        recordInterval = setInterval(function () {
+                            recordTimer++;
+
+                            let minutos = Math.floor(recordTimer / 60);
+                            let segundosRestantes = recordTimer % 60;
+                            let minutosFormateados = minutos < 10 ? "0" + minutos : minutos;
+                            let segundosFormateados = segundosRestantes < 10 ? "0" + segundosRestantes : segundosRestantes;
+                            let tiempoFormateado = minutosFormateados + ":" + segundosFormateados;
+
+                            $('#timeRecord').text(tiempoFormateado);
+                        }, 1000);
+
+                    })
+                    .catch(function (err) {
+                        NetexLMS.functions.showNotyMessage('error', NetexLMS.i18n['activities.audio.access.micro.error.noty']);
+                    });
+            }
+
+
+           $(".btn-stop-audio-recorded").click(function () {
+                clearInterval(recordInterval);
+                $(this).addClass("hidden");
+                $(".saveAudio").removeClass("disabled");
+                $("#playRecordedAudio").removeClass("hidden");
+                $(".btn-delete-audio-recorded").removeClass("hidden");
+                $(this).closest(".audio-player").find(".btn-delete-audio-recorded").removeClass("margin-left-auto");
+                $("#recordedAudio").addClass("hidden");
+                $("#timeRecord").addClass("hidden");
+                rec.stop();
+                gumStream.getAudioTracks()[0].stop();
+                rec.exportWAV(createDownloadLink);
+            });
+
+
+
+
+    function createDownloadLink(blob) {
+        var audioURL = URL.createObjectURL(blob);
+        $("#playRecordedAudio").attr('src', audioURL);
+        trackAudio = blob;
+    }
+
+
+            $(".btn-delete-audio-recorded").click(function () {
+                $(this).addClass("hidden");
+                $('#timeRecord').text('00:00');
+                $('#recordedAudio').attr('src', '');
+                $(".saveAudio").addClass("disabled");
+                $(this).closest(".audio-player-box").removeClass("open");
+                $(".btn-record-audio").removeClass("hidden");
+                $(".btn-record-audio").removeClass("novisible");
+                $("#playRecordedAudio").addClass("hidden");
+                $("#timeRecord").addClass("hidden");
+                // Eliminar el audio grabado
+                trackAudio = [];
+                recordTimer = 0;
+
+            });
+
+
+            $('#saveAudio').click(function () {
+
+                function generarNombreArchivo(extension) {
+                    let fechaActual = new Date().toISOString().replace(/[^0-9]/g, '');
+                    let cadenaUnica = Math.random().toString(36).substr(2, 9);
+                    return fechaActual + '_' + cadenaUnica + extension;
+                }
+
+                function subirAudio(blob, nombreArchivo) {
+                    $(".saveAudio").addClass("disabled");
+                    let bucketNombre = NetexLMS.configuration['s3BucketName'];
+                    let params = {
+                        Bucket: bucketNombre,
+                        Key: nombreArchivo,
+                        Body: blob,
+                        Metadata: {
+                            'Audio-Duration': recordTimer.toString(),
+                        },
+                    };
+
+                    s3.putObject(params, (err, data) => {
+                        if (err) {
+                            NetexLMS.functions.showNotyMessage('error', NetexLMS.i18n['activities.audio.save.error.noty']);
+                            $(".saveAudio").removeClass("disabled");
+                        } else {
+                            saveDeliveryAudio(params.Key);
+                        }
+                    });
+                }
+
+
+                function generateDataToPostDelivery(fileKey) {
+                    let audioDelivery = {};
+                    audioDelivery.message = " ";
+                    audioDelivery.finalDelivery = $("#entrega-final")[0].checked
+                    let audioFile = [];
+                    audioFile.push(fileKey);
+                    audioDelivery.fileKey = audioFile;
+                    return audioDelivery;
+                }
+
+
+                function saveDeliveryAudio(fileKey) {
+                    $.ajax({
+                        url: $("#audioDeliverySaveURL").val(),
+                        method: "POST",
+                        data: JSON.stringify(generateDataToPostDelivery(fileKey)),
+                        contentType: 'application/json',
+                        dataType: "json",
+                        async: false,
+                        error: function (jqXHR, status, error) {
+                            NetexLMS.functions.showNotyMessage('error', NetexLMS.i18n['activities.audio.save.error.noty']);
+                        },
+                        success: function (data) {
+                            NetexLMS.functions.showNotyMessage('success', NetexLMS.i18n['activities.audio.save.success.noty']);
+                            location.reload(true);
+                        }
+                    });
+                }
+
+                let nombreArchivo = generarNombreArchivo('.mp3');
+                subirAudio(trackAudio, nombreArchivo);
+
+            });
+        })
+});

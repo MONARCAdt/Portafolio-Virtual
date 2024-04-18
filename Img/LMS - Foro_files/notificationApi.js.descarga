@@ -1,0 +1,51 @@
+var notificationApi = function () {
+    const NOTIFICATION_COUNT_URL = (tenantId) => NetexLMS.configuration['neds.notification.api.url'] + `/tenants/${tenantId}/notifications/count`;
+
+    const getNotificationsCount = async () => {
+
+        return new Promise(async function (resolve, reject) {
+            var requestCommonParams;
+            try {
+                requestCommonParams = await getRequestCommonParams();
+            } catch (error) {
+                return reject(new Error("Notification Api: error intentando generar request params " + error))
+            }
+
+            var finalUrl = NOTIFICATION_COUNT_URL(requestCommonParams.tenantId);
+            fetch(finalUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + requestCommonParams.authorizationCode
+                }
+            })
+                .then(NetexLMS.functions.handleFetchApiRequestErrors)
+                .then(async function (getUnreadCountResponse) {
+                    const unreadCountJsonResponse = await getUnreadCountResponse.json();
+                    resolve(unreadCountJsonResponse);
+                }).catch(function (error) {
+                return reject(new Error("Notification Api: error intentado obtener contador de notificaciones " + error));
+            });
+        });
+    };
+
+
+    async function getRequestCommonParams() {
+        var nedsTenantContext = await apiServicesApi.getNedsTenantContext().catch((error) => {
+            throw new Error("Communication Api: error intentando recuperar tenant context del usuario " + error);
+        });
+
+        var authorizationCode = await connectAuthentication.getAuthorizationCode().catch((error) => {
+            throw new Error("Communication Api: error intentando recuperar access code del usuario " + error);
+        });
+
+        var loginContext = nedsTenantContext.loginContext;
+        var tenantId = nedsTenantContext.infoTenant.schoolId;
+
+        return {loginContext, tenantId, authorizationCode};
+    }
+
+
+    return {
+        getNotificationsCount: getNotificationsCount
+    };
+}();

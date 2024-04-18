@@ -1,0 +1,85 @@
+/* css especifico para el tema Compartir */
+/* Contiene solo los colores corporativos del tema */
+
+
+/* Navbar */
+.profile-notifications-bubble {
+    background-color: #4AB848;
+}
+
+/* Header class */
+.card {
+    background: #1894d2; /* Old browsers */
+    /* IE9 SVG, needs conditional override of 'filter' to 'none' */
+    background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzE4OTRkMiIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM0YWI4NDgiIHN0b3Atb3BhY2l0eT0iMSIvPgogIDwvbGluZWFyR3JhZGllbnQ+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0idXJsKCNncmFkLXVjZ2ctZ2VuZXJhdGVkKSIgLz4KPC9zdmc+);
+    background: -moz-linear-gradient(left, #1894d2 0%, #4ab848 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, right top, color-stop(0%,#1894d2), color-stop(100%,#4ab848)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(left, #1894d2 0%,#4ab848 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(left, #1894d2 0%,#4ab848 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(left, #1894d2 0%,#4ab848 100%); /* IE10+ */
+    background: linear-gradient(to right, #1894d2 0%,#4ab848 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1894d2', endColorstr='#4ab848',GradientType=1 ); /* IE6-8 */
+}
+.dashboard-wrapper .dashboard {
+    border-bottom: 4px solid #4AB848;
+}
+
+/* Sidemenu */
+.side-menu .nav li > a:hover, .side-menu .nav li > a:focus, .side-menu .nav li.active > a, .side-menu .nav li.active > a:hover{
+    background: #4ab848; /* Old browsers */
+    /* IE9 SVG, needs conditional override of 'filter' to 'none' */
+    background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzRhYjg0OCIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjMlIiBzdG9wLWNvbG9yPSIjNGFiODQ4IiBzdG9wLW9wYWNpdHk9IjEiLz4KICAgIDxzdG9wIG9mZnNldD0iMyUiIHN0b3AtY29sb3I9IiMzNDg1NjUiIHN0b3Atb3BhY2l0eT0iMSIvPgogICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMTg5NGQyIiBzdG9wLW9wYWNpdHk9IjEiLz4KICA8L2xpbmVhckdyYWRpZW50PgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InVybCgjZ3JhZC11Y2dnLWdlbmVyYXRlZCkiIC8+Cjwvc3ZnPg==);
+    background: -moz-linear-gradient(left, #4ab848 0%, #4ab848 10%, #348565 10%, #1894d2 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(left, #4ab848 0%,#4ab848 10%,#348565 10%,#1894d2 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to right, #4ab848 0%,#4ab848 10%,#348565 10%,#1894d2 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#4ab848', endColorstr='#1894d2',GradientType=1 ); /* IE6-8 */
+}
+.badge-custom {
+    background-color: #4AB848;
+}
+
+/* Buttons */
+.btn-class-menu:hover, .btn-class-menu:active{
+    border-bottom:5px solid #4AB848;
+}
+.btn-class-menu-active, .btn-class-menu-active:focus{
+    border-bottom:5px solid #4AB848;
+}
+
+/* Checkboxes */
+/*.checkbox-primary input[type="checkbox"]:checked + label::before {
+    background-color: #4AB848;
+    border-color: #4AB848;
+}
+.radio-primary input[type="radio"]:checked + label::before {
+    border-color: #4AB848;
+}
+.radio-primary input[type="radio"]:checked + label::after{
+    background-color: #4AB848;
+}*/
+
+/* Modals */
+table .icon-uno.info-line {
+    color: #4AB848;
+}
+.modal .icon-uno.question-circle {
+    color: #4AB848;
+}
+
+/* Steps */
+.wizard li.active span.round-tab {
+    background: #4AB848;
+}
+
+/*pc size*/ 
+@media (min-width: 860px) { 
+    /* Sidemenu */
+    .side-menu .nav li > a:hover, .side-menu .nav li > a:focus, .side-menu .nav li.active > a, .side-menu .nav li.active > a:hover{
+        /* IE9 SVG, needs conditional override of 'filter' to 'none' */
+        background: -moz-linear-gradient(left, #4ab848 0%, #4ab848 3%, #348565 3%, #1894d2 100%); /* FF3.6-15 */
+        background: -webkit-linear-gradient(left, #4ab848 0%,#4ab848 3%,#348565 3%,#1894d2 100%); /* Chrome10-25,Safari5.1-6 */
+        background: linear-gradient(to right, #4ab848 0%,#4ab848 3%,#348565 3%,#1894d2 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    }
+}
+
+

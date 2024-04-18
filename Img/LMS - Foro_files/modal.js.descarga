@@ -1,0 +1,55 @@
+NetexLMS = NetexLMS || {};
+NetexLMS.tag = NetexLMS.tag || {};
+NetexLMS.tag.modal = (function (ns, $, undefined) {
+
+    var modalContainerIdDataAttribute = 'data-modal-container-id';
+    var modalTriggerSelector = 'a[' + modalContainerIdDataAttribute + ']';
+    var modalSelector = '.modal';
+
+    var getContainerId = function (element) {
+
+        return $(element).attr(modalContainerIdDataAttribute);
+    };
+
+    var showModal = function (containerId) {
+        $('.ajax-modal-loaded').removeClass('ajax-modal-loaded');
+        return $("#" + containerId).find(modalSelector).modal({backdrop: "static"});
+    };
+
+    var loadModal = function (containerId, url) {
+        var container = $('#' + containerId);
+        if (!container.hasClass('ajax-modal-loaded')) {
+            container.addClass('ajax-modal-loaded');
+            if (url !== undefined) {
+                ns.functions.loadAjaxModal(url, containerId, function openModal() {
+                    showModal(containerId);
+                });
+            } else {
+                showModal(containerId);
+            }
+        }
+    };
+
+    var init = function () {
+
+        $(document).on('click', modalTriggerSelector, {}, function () {
+            loadModal(getContainerId(this), $(this).attr('href'));
+            return false;
+        });
+
+        $(document).on('hidden.bs.modal', modalSelector, {}, function () {
+
+            var modal = $(this);
+            NetexLMS.util.form.clearForm(modal);
+        });
+    };
+
+    return {
+        init: init,
+        loadModal: loadModal,
+        showModal: showModal
+    };
+
+})(NetexLMS, jQuery);
+
+jQuery(NetexLMS.tag.modal.init);

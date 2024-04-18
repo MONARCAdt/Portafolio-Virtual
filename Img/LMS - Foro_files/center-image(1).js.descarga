@@ -1,0 +1,41 @@
+$(window).load(function () {
+
+    var resize = function(domElement) {
+
+        var element = $(domElement);
+        var div = element.closest('div');
+
+        var imgDivWidth = div.width();
+        var imgDivHeight = div.height();
+        var imgWidth = element.context.width;
+        var imgHeight = element.context.height;
+
+        var scaledValue = imgHeight / imgDivHeight;
+        var imgResizedWidth = imgWidth / scaledValue;
+
+        element.css('height', imgDivHeight);
+        element.css('left', (-1) * (Math.round((imgResizedWidth - imgDivWidth) / 2)) + "px");
+
+        element.removeAttr('hidden');
+
+    };
+
+    $("img.resize-center").each(function() {
+
+        var $this = $(this);
+
+        resize(this);
+
+        $this.on('load', function() {
+            resize($this);
+        });
+
+        $(window).on('resize', function () {
+            resize($this);
+        });
+
+        $("#toggle-card").click(function () {
+            resize($this);
+        });
+    });
+});

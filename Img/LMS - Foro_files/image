@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Inicio de sesi&#243;n - e-stela Compartir</title>
+    <meta name="description" content="Acceso a e-stela LMS. Plataforma educativa de Santillana Compartir.">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" /> <!--320-->
+    <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, target-densitydpi=medium-dpi">
+    
+    <meta charset="utf-8" />
+    <link href="/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="/favicon-ios.png">
+    <style>
+    .primary, a {
+        color: #00a1e4 !important;
+    }
+    .primaryBackground {
+        background-color: #00a1e4 !important;
+    }
+    .primaryBorder {
+        border: 1px solid #00a1e4 !important;
+        -webkit-box-shadow: none !important;
+    }
+    .primaryBorderFocus:focus {
+        border: 1px solid #00a1e4 !important;
+        -webkit-box-shadow: none !important;
+    }
+    .primaryBorderIcon {
+        border-color: #00a1e4 !important;
+    }
+    #bgimg {
+        background: url(https://caprodevelop.blob.core.windows.net/uploads/pro/mainimage/1e895c2b-318a-4e6d-929d-309d239c911e.jpg) no-repeat;
+    }
+
+    .validate {
+        color: #E83C23 !important;
+    }
+    .field-validation-error {
+        color: #E83C23 !important;
+    }
+    input.input-validation-error {
+        border: 1px solid #E83C23 !important;
+        -webkit-box-shadow: none !important;
+    }
+    input.input-validation-error + div {
+        border-color: #E83C23 !important;
+    }
+  
+    .loginInput:focus + div {
+        border-color: #00a1e4 !important;
+        border-right: 0;
+    }
+
+    .separator {display: inline; padding-left: 5px; padding-right: 5px;}
+    </style>
+    <link href="/Content/css?v=7UpInVtDUcTW5HtGfK_MIIDXfz8CeReWFCxoHkfzrok1" rel="stylesheet"/>
+
+    
+    <link href="/Content/libraries/bootstrap.min.css" rel="stylesheet"/>
+
+    <link href="/Content/login.css" rel="stylesheet"/>
+
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,900" rel="stylesheet">
+
+
+    <script type='text/javascript'>
+        var appInsights = window.appInsights || function (config) {
+            function r(config) { t[config] = function () { var i = arguments; t.queue.push(function () { t[config].apply(t, i) }) } }
+            var t = { config: config }, u = document, e = window, o = 'script', s = u.createElement(o), i, f; for (s.src = config.url || '//az416426.vo.msecnd.net/scripts/a/ai.0.js', u.getElementsByTagName(o)[0].parentNode.appendChild(s), t.cookie = u.cookie, t.queue = [], i = ['Event', 'Exception', 'Metric', 'PageView', 'Trace', 'Ajax']; i.length;) r('track' + i.pop()); return r('setAuthenticatedUserContext'), r('clearAuthenticatedUserContext'), config.disableExceptionTracking || (i = 'onerror', r('_' + i), f = e[i], e[i] = function (config, r, u, e, o) { var s = f && f(config, r, u, e, o); return s !== !0 && t['_' + i](config, r, u, e, o), s }), t
+        }({
+            instrumentationKey: '911ce8ad-0891-42b2-af76-7fed53243dd4'
+        });
+        window.appInsights = appInsights;
+        appInsights.trackPageView();
+        var CommonResources = CommonResources || {};
+        (function (CommonResources) {
+            CommonResources.CaptchaPlaceHolder = "Escriba el texto del cuadro superior";
+        })(CommonResources);
+    </script>
+    <script type="text/javascript">
+        //Define variables
+        const cookiePolicyEN = "https://www.prisa.com/en/info/modal/cookies-policy-1-no-publi";
+        const cookiePolicyES = "https://www.prisa.com/es/info/modal/politica-de-cookies-no-publi";
+        const cookiePolicyPT = "https://www.prisa.com/es/info/modal/politica-de-cookies-no-publi";
+    </script>
+    <script src="/Scripts/CookieAdvisor/avisopcdidomi-corp.js"></script>
+    <script type="text/javascript" id="spcloader" src="https://sdk.privacy-center.org/loader.js" async></script>
+    <script type="text/javascript">
+        function bindEvent(element, eventName, eventHandler) {
+            if (element.addEventListener) { element.addEventListener(eventName, eventHandler, false); } else if (element.attachEvent) {
+                element.attachEvent('on' + eventName, eventHandler);
+            }
+        }
+        bindEvent(window, 'message', function (e) {
+            if (typeof e.origin != 'undefined' && (e.origin == 'https://prisa.com' || e.origin == 'https://www.prisa.com')) Didomi.preferences.show();
+        });
+    </script>
+</head>
+<body>
+    <div id="bgimg"></div>
+    
+    <div id="body">
+        
+        <section>
+            
+
+
+
+<video playsinline autoplay muted loop id="bgvid">
+    <source type="video/mp4">
+</video>
+
+<div id="container" class="modal show bg-login" tabindex="-1" role="dialog">
+    <div id="content">
+        <div id="loginForm" class="modal-dialog modal-dialog-custom">
+            <div class="modal-header modal-header-login-custom">
+                <h1 class="hidden">Log in</h1>
+                <img src="https://caprodevelop.blob.core.windows.net/uploads/pro/logoimage/ba00b2da-39f7-4647-90c9-01c33af21750.png" class="logoImage" alt="Main logo of company" />
+
+            </div>
+            <div id="form" class="login-form">
+                <div class="validate" id="validatePassword"></div>
+                <div class="validate"></div>
+                <div class="form-group">
+
+<form action="/Account/Login?wa=wsignin1.0&amp;wtrealm=http%3A%2F%2Flms30.santillanacompartir.com%2Flogin%2Fcompartir%2F&amp;wreply=https%3A%2F%2Flms30.santillanacompartir.com%2Flogin%2Fsso%2Floginconnect%3FredirectTo%3DL2RvY3VtZW50L3VzZXIvaW1hZ2U_Y3R4dGlkPTE5ODQzJmN0eHNpZD0zODcmY3R4cmlkPTE2JnBlcnNvbklkPTk2MjI4NTc%3D" method="post" name="loginForm"><input name="__RequestVerificationToken" type="hidden" value="b6LsZeClxLq_g-PNuwjJdIO0Qaq7GbhdgfMpgVzlyiM2Rnn0CXIqSLh_rq39k4OgWJZa63wL8Yt-WnbVynxGbj2OA2E1" /><input id="Wa" name="Wa" type="hidden" value="wsignin1.0" />
+<input id="Wreply" name="Wreply" type="hidden" value="https://lms30.santillanacompartir.com/login/sso/loginconnect?redirectTo=L2RvY3VtZW50L3VzZXIvaW1hZ2U_Y3R4dGlkPTE5ODQzJmN0eHNpZD0zODcmY3R4cmlkPTE2JnBlcnNvbklkPTk2MjI4NTc=" />
+<input id="WtRealm" name="WtRealm" type="hidden" value="http://lms30.santillanacompartir.com/login/compartir/" />                        <div id="user">
+                            <label class="hidden" for="username">Usuario</label>
+                            <input class="loginInput primaryBorderFocus form-control" data-val="true" data-val-length="El campo Usuario debe ser una cadena con una longitud máxima de 256." data-val-length-max="256" data-val-required="Debe introducir el nombre de usuario." id="username" name="UserName" placeholder="Usuario" type="text" value="" />
+                            <div class="loginIcon" id="usernameIcon">
+                                <span class="icon-uno user">
+                                    <img src="/Content/fonts/ico_user.png" alt="icon for user" />
+                                </span>
+                            </div>
+                        </div>
+                        <div id="passwordWrapper">
+                            <label class="hidden" for="password">Contrase&#241;a</label>
+                            <input class="loginInput primaryBorderFocus form-control" data-val="true" data-val-required="Debe introducir la contraseña." id="password" name="Password" placeholder="Contraseña" type="password" />
+                            <div class="loginIcon">
+                                <span class="icon-uno lock">
+                                    <img src="/Content/fonts/ico_password.png" alt="icon for password" />
+                                </span>
+                            </div>
+                        </div>
+<input class="remember span2" data-toggle="toggle" data-val="true" data-val-required="El campo Mantenerme conectado es obligatorio." id="RememberMe" name="RememberMe" type="checkbox" value="true" /><input name="RememberMe" type="hidden" value="false" /><label class="remember" for="RememberMe" id="rememberLabel">Mantenerme conectado</label><input id="RelayState" name="RelayState" type="hidden" value="" /><input id="SAMLRequest" name="SAMLRequest" type="hidden" value="" />                        <div>
+                            <input type="submit" id="submit" value="Conectarme" class="primaryBackground" />
+                        </div>
+
+<input type="hidden" id="g-Recaptcha-Response" name="g-Recaptcha-Response">
+    <script>
+        var captchaForm = document.getElementById('g-Recaptcha-Response').form;
+        var elements = captchaForm.getElementsByTagName('input');
+        var submitButton;
+        for (var i = 0; i < elements.length; i++) {
+            if (elements[i].type.toLowerCase() === "submit") {
+                if (document.getElementById('g-Recaptcha-Response').value == '') {
+                    submitButton = elements[i];
+                    submitButton.setAttribute('disabled', '');
+                    submitButton.setAttribute('sc-current-text', submitButton.value);
+                    submitButton.value = 'Cargando...';
+                }
+            }
+        }
+
+        var formBeingSubmitted = false;
+        captchaForm.onsubmit = function () {
+            if (formBeingSubmitted) {
+                return false;
+            }
+            submitButton.value = 'Cargando...';
+            formBeingSubmitted = true;
+            submitButton.setAttribute('disabled', '');
+            submitButton.setAttribute('sc-form-submitted', 'true');
+
+            return true;
+        };
+
+    </script>
+    <script src="https://www.google.com/recaptcha/enterprise.js?render=6LefMrMaAAAAAO3OCNNnrVeTmx041qN6x5arXRRI"></script>
+    <script>
+        grecaptcha.enterprise.ready(recaptcha);
+
+        function recaptcha() {
+            grecaptcha.enterprise
+                .execute('6LefMrMaAAAAAO3OCNNnrVeTmx041qN6x5arXRRI', { action: 'Login' })
+                .then(function (token) {
+                    var captchaForm = document.getElementById('g-Recaptcha-Response').form;
+                    var elements = captchaForm.getElementsByTagName('input');
+                    for (var i = 0; i < elements.length; i++) {
+                        var input = elements[i];
+                        if (input.type.toLowerCase() === "submit") {
+                            if (input.getAttribute('sc-form-submitted') != 'true') {
+                                input.removeAttribute('disabled');
+                                var oldValue = input.getAttribute('sc-current-text');
+                                if (oldValue != '') {
+                                    input.value = input.getAttribute('sc-current-text');
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    document.getElementById('g-Recaptcha-Response').value = token;
+                    clearTimeout(recaptcha);
+                    setTimeout(recaptcha, 100000);
+                });
+        }
+    </script>
+</form>                </div>
+            </div>
+
+            <div id="cantAcces">
+<a class="primary" href="/Account/ForgotPassword?wa=wsignin1.0&amp;wtrealm=http%3A%2F%2Flms30.santillanacompartir.com%2Flogin%2Fcompartir%2F&amp;wreply=https%3A%2F%2Flms30.santillanacompartir.com%2Flogin%2Fsso%2Floginconnect%3FredirectTo%3DL2RvY3VtZW50L3VzZXIvaW1hZ2U_Y3R4dGlkPTE5ODQzJmN0eHNpZD0zODcmY3R4cmlkPTE2JnBlcnNvbklkPTk2MjI4NTc%3D" id="forgotPasswordLink">&#191;No puede acceder a su cuenta?</a>            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+
+        </section>
+    </div>
+    <script src="/bundles/jquery?v=235DeCRyc2KKtm5-u-WowaGmWHU3ft44y448NxHpMf41"></script>
+
+<script src="/bundles/datepicker?v=TCPtFpPueKvq4udoXQHWBmSd6sNb30kUYr2PHzZRF-o1"></script>
+
+    <script src="/bundles/common?v=5J-Q70IeMUQzQg0T1wjyRCXFQhj_XZdWPQGq7ejVFI41"></script>
+
+    
+    <script src="/scripts/mobileDevices.js"></script>
+    <script src="/scripts/account/Login.js"></script>
+    <script src="/bundles/iosLogin?v=ftoaxJOF5aTPOvMyqNYKrGRkDdHetQ4Mc9l12UT3tOI1"></script>
+
+    <script type="text/javascript">
+        var is_uiwebview = /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(navigator.userAgent);
+        if (is_uiwebview) {
+            var viewport = document.getElementById("viewport");
+            viewport.setAttribute("content", "width=310, user-scalable=0");
+            "width=310, user-scalable=0"
+            getStyleIfIsIos(is_uiwebview);
+        }
+    </script>
+
+
+    <footer id="footer">
+        <div id="footContent">
+            <div class="primary" id="footLeft">
+                ©2024 Santillana<p class="separator">|</p>
+
+<a class="primary" href="/Account/Faq?wa=wsignin1.0&amp;wtrealm=http%3A%2F%2Flms30.santillanacompartir.com%2Flogin%2Fcompartir%2F&amp;wreply=https%3A%2F%2Flms30.santillanacompartir.com%2Flogin%2Fsso%2Floginconnect%3FredirectTo%3DL2RvY3VtZW50L3VzZXIvaW1hZ2U_Y3R4dGlkPTE5ODQzJmN0eHNpZD0zODcmY3R4cmlkPTE2JnBlcnNvbklkPTk2MjI4NTc%3D">FAQ</a>                <p class="separator">|</p>
+<a class="primary" href="/Account/CookiesPolicy?wa=wsignin1.0&amp;wtrealm=http%3A%2F%2Flms30.santillanacompartir.com%2Flogin%2Fcompartir%2F&amp;wreply=https%3A%2F%2Flms30.santillanacompartir.com%2Flogin%2Fsso%2Floginconnect%3FredirectTo%3DL2RvY3VtZW50L3VzZXIvaW1hZ2U_Y3R4dGlkPTE5ODQzJmN0eHNpZD0zODcmY3R4cmlkPTE2JnBlcnNvbklkPTk2MjI4NTc%3D">Pol&#237;tica de cookies</a>                            </div>
+            <div id="footRight">
+                    <img alt="" />
+            </div>
+            <div class="clear"></div>
+        </div>
+        <div class="clear"></div>
+    </footer>
+</body>
+</html>

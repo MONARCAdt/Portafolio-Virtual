@@ -1,0 +1,134 @@
+function loadCkEditor(customCss, countHtml, onlyTextToolbar) {
+
+    let countHTML;
+
+    if (!customCss) {
+        customCss = CKEDITOR.getUrl('contents.css');
+    }
+
+    if (countHtml == false) {
+        countHTML = countHtml;
+    } else {
+        countHTML = true;
+    }
+
+    var base = $("base").attr("href");
+    var defaultMaxLength = NetexLMS.configuration['tags.custom.html.input.textarea.maxLength'];
+
+    $("textarea[data-richtext='true']").each(function() {
+
+        var lang = $(this).data('language');
+        var maxLength = $(this).attr('maxLength');
+
+        //fixing languages
+        if (lang == "pt") {
+            lang = "pt-br";
+            spell_lang = "pt_BR";
+        } else if (lang.startsWith("es")) {
+            spell_lang = "es_ES";
+        } else if (lang == "en") {
+            spell_lang = "en_US";
+        } else {
+        	spell_lang = "es_ES";
+        }
+
+        let defaultConfiguracionCKEditor = {
+            contentsCss: customCss,
+            defaultLanguage: 'es',
+            language: lang,
+            baseHref: base,
+            smiley_path: 'js/3.0/ckeditor/4.5.6/plugins/smiley/images/',
+            scayt_sLang: spell_lang,
+            wsc_lang: spell_lang,
+            wordcount: {
+                // Whether or not you want to show the Word Count
+                showWordCount: true,
+                // Whether or not you want to show the Char Count
+                showCharCount: true,
+                // Whether or not you want to count Spaces as Chars
+                countSpacesAsChars: true,
+                // Whether or not to include Html chars in the Char Count
+                countHTML: countHTML,
+                // Maximum allowed Char Count, -1 is default for unlimited
+                maxCharCount: maxLength !== undefined ? maxLength : defaultMaxLength,
+                // How long to show the 'paste' warning, 0 is default for not auto-closing the notification
+                pasteWarningDuration: 0,
+                // Add filter to add or remove element before counting (see CKEDITOR.htmlParser.filter), Default value : null (no filter)
+                filter: new CKEDITOR.htmlParser.filter({
+                    elements: {
+                        div: function( element ) {
+                            if(element.attributes.class == 'mediaembed') {
+                                return false;
+                            }
+                        }
+                    }
+                })
+            }
+        };
+
+
+        let onlyTextOptionsConfiguracionCKEditor = {
+            toolbar: [
+                {
+                    name: 'basicstyles',
+                    items: ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-']
+                },
+                {name: 'paragraph', items: ['NumberedList', 'BulletedList', '-']},
+            ],
+            contentsCss: customCss,
+            defaultLanguage: 'es',
+            language: lang,
+            baseHref: base,
+            smiley_path: 'js/3.0/ckeditor/4.5.6/plugins/smiley/images/',
+            scayt_sLang: spell_lang,
+            wsc_lang: spell_lang,
+            wordcount: {
+                // Whether or not you want to show the Word Count
+                showWordCount: true,
+                // Whether or not you want to show the Char Count
+                showCharCount: true,
+                // Whether or not you want to count Spaces as Chars
+                countSpacesAsChars: true,
+                // Whether or not to include Html chars in the Char Count
+                countHTML: countHTML,
+                // Maximum allowed Char Count, -1 is default for unlimited
+                maxCharCount: maxLength !== undefined ? maxLength : defaultMaxLength,
+                // How long to show the 'paste' warning, 0 is default for not auto-closing the notification
+                pasteWarningDuration: 0,
+                // Add filter to add or remove element before counting (see CKEDITOR.htmlParser.filter), Default value : null (no filter)
+                filter: new CKEDITOR.htmlParser.filter({
+                    elements: {
+                        div: function( element ) {
+                            if(element.attributes.class == 'mediaembed') {
+                                return false;
+                            }
+                        }
+                    }
+                })
+            }
+        };
+
+        if(onlyTextToolbar == true) {
+            $(this).ckeditor(onlyTextOptionsConfiguracionCKEditor);
+        } else {
+            $(this).ckeditor(defaultConfiguracionCKEditor);
+        }
+
+
+
+    });
+
+    // This solves a conflict between ckEditor plugin eqn editor and bootstrap modals because of tabindex and focus
+    $(document).delegate('.cke_button__eqneditor_icon', 'click', function() {
+    	//tabindex attribute is deleted when formula editor modal is loaded
+    	$('.ajaxModalFormComponent').removeAttr('tabindex');
+    	//added events to regenerate tabindex attribute on formula modal close
+        for(var i in CKEDITOR.instances) {
+    	    CKEDITOR.instances[i].on('dialogHide', function(){
+    			$('.ajaxModalFormComponent').attr('tabindex', '-1');
+    		})
+        }
+    });
+
+
+}

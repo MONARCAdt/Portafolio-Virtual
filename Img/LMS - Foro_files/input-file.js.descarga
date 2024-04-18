@@ -1,0 +1,135 @@
+$(document).ready(function() {
+
+    Dropzone.autoDiscover = false;
+
+    var errorMessage = NetexLMS.i18n['input.error.file.upload'];
+    var cancelUploadFileMessage = NetexLMS.i18n['input.cancel.file.upload'];
+    var removeFileMessage = NetexLMS.i18n['input.remove.file.upload'];
+    var paramName = "file";
+    var isInitializedClassName = 'input-file-initialized';
+    var errorMaxFilesMessage = NetexLMS.i18n['input.error.file.upload'];
+    var errorMaxFileSizeMessage = NetexLMS.i18n['input.error.file.maxFilesize'];
+    var configMaxFileSize = NetexLMS.configuration['tags.custom.html.input.file.maxFileSize'];
+    var urlS3 = NetexLMS.configuration['tags.custom.html.input.file.service.urlS3'];
+
+
+    $(".dropzone").each(function() {
+
+        if( ! $(this).hasClass(isInitializedClassName) ) {
+
+            var ctx = this;
+            var ctxMaxFiles = $(this).data("maxfiles");
+            if( ctxMaxFiles === '' ) {
+                ctxMaxFiles = null;
+            } else {
+                ctxMaxFiles = Number(ctxMaxFiles);
+            }
+
+            var getFileKeyInput = function() {
+                return $(".file-key-value", ctx);
+            };
+
+            var attachmentDropzone = new Dropzone(ctx, {
+                url : "#",
+                paramName : paramName,
+                addRemoveLinks : true,
+                dictResponseError: errorMessage,
+                dictCancelUpload: cancelUploadFileMessage,
+                dictRemoveFile: removeFileMessage,
+                maxFiles : ctxMaxFiles,
+                dictMaxFilesExceeded: errorMaxFilesMessage,
+                dictFileTooBig: errorMaxFileSizeMessage,
+                maxFilesize: configMaxFileSize,
+                method: "PUT",
+                accept: function(file, cb) {
+                    $.ajax({
+                    	type: "GET",
+            			url: urlS3,
+            			data: {
+            				fileName: file.name
+            		    },
+            			success: function (data) {
+            				if (!data.uploadUrl) {
+            					return cb('Failed to receive an upload url');
+			                }
+        			        file.signedRequest = data.uploadUrl;
+        			        file.fileKeyS3  = data.fileKeyS3;
+        			        file.previewUrl = data.previewUrl;
+        			        cb();
+            			}
+            		});
+                },
+                sending: function(file, xhr) {
+                    var _send = xhr.send;
+                    xhr.send = function() {
+                        _send.call(xhr, file);
+                    }
+
+                },
+                processing:function(file){
+                    //Deshabilitamos el botón de google drive en la creación de recursos
+                    $('#google-drive-import-resource-creation').attr("disabled", true);
+                    this.options.url = file.signedRequest;
+                }
+            });
+
+            $(this).addClass(isInitializedClassName);
+
+            attachmentDropzone.on("success", function(file, response) {
+                var fileKeyInputs = getFileKeyInput();
+                var baseFileKeyInput = fileKeyInputs.eq(0);
+                var fileKeyInput = baseFileKeyInput;
+
+                if (fileKeyInput.val()) {
+                    fileKeyInput = fileKeyInput.clone();
+                    baseFileKeyInput.after(fileKeyInput);
+                }
+
+                baseFileKeyInput.val(file.fileKeyS3);
+
+                $('#fileKey').data({
+                    "previewUrl" : file.previewUrl,
+                    "size" : file.size,
+                    "type" : file.type
+                });
+                if ($('.dropzone').attr('data-maxfiles') != 1)	{
+                	$('.dz-message').show();
+                }
+
+                //Volvemos a habilitar el botón de google drive en la creación de recursos
+                $('#google-drive-import-resource-creation').attr("disabled", false);
+            });
+
+            attachmentDropzone.on("removedfile", function(file) {
+
+                var fileKey = file.fileKeyS3;
+                var attachInput = $(".file-key-value[value=\"" + fileKey + "\"]", ctx);
+
+                if (fileKey) {
+	                if (getFileKeyInput().length > 1) {
+	                    attachInput.remove();
+	                } else {
+	                    attachInput.removeAttr("value")
+	                }
+                }
+            });
+
+            attachmentDropzone.on("maxfilesexceeded", function(file) {
+                NetexLMS.functions.showNotyMessage('warning', NetexLMS.i18n['input.error.file.maxFiles']);
+            });
+
+            attachmentDropzone.on("error", function(file, message, xhr) {
+                NetexLMS.functions.showNotyMessage('warning', errorMessage);
+                $(".dropzone").addClass("has-error");
+
+                $("a.dz-remove").click(function () {
+                    if ($(".dz-preview").hasClass("dz-error")) {
+                        $(".dropzone").addClass("has-error");
+                    } else{
+                        $(".dropzone").removeClass("has-error");
+                    }
+                });
+            });
+        }
+    });
+});

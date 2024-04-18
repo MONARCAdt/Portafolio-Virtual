@@ -1,0 +1,70 @@
+/**
+ * @license Copyright (c) 2003-2015, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or http://ckeditor.com/license
+ */
+
+
+CKEDITOR.editorConfig = function( config ) {
+
+//	var base = $("base").attr("href");
+//	
+//	config.defaultLanguage = 'es';
+//	config.language = 'fr';
+//
+//	config.baseHref = base;
+//	config.smiley_path = 'js/3.0/ckeditor/4.5.6/plugins/smiley/images/';
+//	config.scayt_sLang = 'es_ES';
+//	config.wsc_lang = 'es_ES';
+    config.extraPlugins = 'link,fakeobjects';
+};
+
+
+
+// http://handsomedogstudio.com/ckeditor-set-default-target-blank
+/* Here we are latching on an event ... in this case, the dialog open event */
+CKEDITOR.on('dialogDefinition', function (ev) {
+
+    try {
+
+        /* this just gets the name of the dialog */
+
+        var dialogName = ev.data.name;
+
+        /* this just gets the contents of the opened dialog */
+
+        var dialogDefinition = ev.data.definition;
+
+
+
+        /* Make sure that the dialog opened is the link plugin ... otherwise do nothing */
+
+        if (dialogName === 'link') {
+
+            /* Getting the contents of the Target tab */
+
+            var informationTab = dialogDefinition.getContents('target');
+
+            /* Getting the contents of the dropdown field "Target" so we can set it */
+
+            var targetField = informationTab.get('linkTargetType');
+
+            /* Now that we have the field, we just set the default to _blank
+
+             A good modification would be to check the value of the URL field
+
+             and if the field does not start with "mailto:" or a relative path,
+
+             then set the value to "_blank" */
+
+            targetField['default'] = '_blank';
+
+        }
+
+    } catch (exception) {
+
+        console.error('Error ' + ev.message);
+
+    }
+
+});
+

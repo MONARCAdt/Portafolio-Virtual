@@ -1,0 +1,26 @@
+// hack to fix ckeditor/bootstrap compatiability bug when ckeditor appears in a bootstrap modal dialog
+//
+// Include this AFTER both bootstrap and ckeditor are loaded.
+
+$(document).ready(function() {
+    $.fn.modal.Constructor.prototype.enforceFocus = function() {
+        modal_this = this
+        $(document).on('focusin.modal', function (e) {
+            if (modal_this.$element[0] !== e.target && !modal_this.$element.has(e.target).length 
+                && !$(e.target.parentNode).hasClass('cke_dialog_ui_input_select') 
+                && !$(e.target.parentNode).hasClass('cke_dialog_ui_input_text')) {
+
+                modal_this.$element.focus()
+            }
+        })
+    };
+});
+
+//Ocultar teclado cuando se pierde el foco en el CKeditor (arreglo bug en ipad con safari)
+$(document).on('click', function() {
+    if ($(".cke_chrome").hasClass("cke_focus")) {  
+        document.activeElement.blur();
+        $(".cke_chrome").removeClass("cke_focus")
+    }
+ });
+
